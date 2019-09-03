@@ -1,0 +1,1 @@
+cmd_/home/mars/TCC/Kernel_Paxos_Persistence/persistence.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/mars/TCC/Kernel_Paxos_Persistence/persistence.ko /home/mars/TCC/Kernel_Paxos_Persistence/persistence.o /home/mars/TCC/Kernel_Paxos_Persistence/persistence.mod.o

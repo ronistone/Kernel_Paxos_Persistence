@@ -1,0 +1,1 @@
+cmd_/home/mars/TCC/Kernel_Paxos_Persistence/persistence.o := ld -m elf_x86_64   -r -o /home/mars/TCC/Kernel_Paxos_Persistence/persistence.o /home/mars/TCC/Kernel_Paxos_Persistence/kpaxos/kernel_device.o ; scripts/mod/modpost /home/mars/TCC/Kernel_Paxos_Persistence/persistence.o
