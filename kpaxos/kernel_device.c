@@ -1,15 +1,14 @@
 #include "kernel_device.h"
-#include "kernel_client.h"
 #include "common.h"
+#include "kernel_client.h"
+#include <linux/device.h>
+#include <linux/fs.h>
+#include <linux/kernel.h>
 #include <linux/poll.h>
 #include <linux/semaphore.h>
+#include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/device.h>
-#include <linux/kernel.h>
-
 
 #define BUFFER_SIZE 100000
 
@@ -17,14 +16,14 @@ static struct mutex char_mutex;
 // static struct mutex buffer_mutex;
 
 // The device-driver class struct pointer
-static struct class* charClass = NULL;
+static struct class *charClass = NULL;
 // The device-driver device struct pointer
-static struct device*    charDevice = NULL;
+static struct device *charDevice = NULL;
 static wait_queue_head_t access_wait;
-static char *            de_name, *clas_name;
-static int               majorNumber, working, current_buf = 0, first_buf = 0;
-static struct user_msg** msg_buf;
-static atomic_t          used_buf;
+static char *de_name, *clas_name;
+static int majorNumber, working, current_buf = 0, first_buf = 0;
+static struct user_msg **msg_buf = NULL;
+static atomic_t used_buf;
 
 struct file_operations fops = {
     .owner = THIS_MODULE,
@@ -35,28 +34,22 @@ struct file_operations fops = {
     .poll = kdev_poll,
 };
 
-static void
-paxerr(char* err)
-{
-  printk(KERN_ALERT"Device Char: failed to %s", err);
+static void paxerr(char *err) {
+  printk(KERN_ALERT "Device Char: failed to %s", err);
   // working = 0;
 }
 
-int
-kdev_open(struct inode* inodep, struct file* filep)
-{
+int kdev_open(struct inode *inodep, struct file *filep) {
   if (!mutex_trylock(&char_mutex)) {
-    printk(KERN_ALERT"Device char: Device used by another process");
+    printk(KERN_ALERT "Device char: Device used by another process");
     return -EBUSY;
   }
   return 0;
 }
 
-
 // returns 0 if it has to stop, >0 when it reads something, and <0 on error
-ssize_t
-kdev_read(struct file* filep, char* buffer, size_t len, loff_t* offset)
-{
+ssize_t kdev_read(struct file *filep, char *buffer, size_t len,
+                  loff_t *offset) {
   int error_count;
   size_t llen;
 
@@ -66,7 +59,7 @@ kdev_read(struct file* filep, char* buffer, size_t len, loff_t* offset)
 
   atomic_dec(&used_buf);
   llen = sizeof(struct user_msg) + msg_buf[first_buf]->size;
-  error_count = copy_to_user(buffer, (char*)msg_buf[first_buf], llen);
+  error_count = copy_to_user(buffer, (char *)msg_buf[first_buf], llen);
 
   if (error_count != 0) {
     paxerr("send fewer characters to the user");
@@ -77,18 +70,15 @@ kdev_read(struct file* filep, char* buffer, size_t len, loff_t* offset)
   return llen;
 }
 
-ssize_t
-kdev_write(struct file* filep, const char* buffer, size_t len, loff_t* offset)
-{
+ssize_t kdev_write(struct file *filep, const char *buffer, size_t len,
+                   loff_t *offset) {
   if (working == 0)
     return -1;
 
   return len;
 }
 
-unsigned int
-kdev_poll(struct file* file, poll_table* wait)
-{
+unsigned int kdev_poll(struct file *file, poll_table *wait) {
   poll_wait(file, &access_wait, wait);
   if (atomic_read(&used_buf) > 0)
     return POLLIN;
@@ -96,21 +86,17 @@ kdev_poll(struct file* file, poll_table* wait)
   return 0;
 }
 
-int
-kdev_release(struct inode* inodep, struct file* filep)
-{
+int kdev_release(struct inode *inodep, struct file *filep) {
   mutex_unlock(&char_mutex);
   // LOG_INFO("Messages left %d", atomic_read(&used_buf));
   atomic_set(&used_buf, 0);
   current_buf = 0;
   first_buf = 0;
-  printk(KERN_INFO"Device Char: Device successfully closed");
+  printk(KERN_INFO "Device Char: Device successfully closed");
   return 0;
 }
 
-static void
-allocate_name(char** dest, char* name, int id)
-{
+static void allocate_name(char **dest, char *name, int id) {
   size_t len = strlen(name) + 1;
   *dest = pmalloc(len + 1);
   memcpy(*dest, name, len);
@@ -118,10 +104,8 @@ allocate_name(char** dest, char* name, int id)
   (*dest)[len] = '\0';
 }
 
-static void
-allocate_name_folder(char** dest, char* name, int id)
-{
-  char*  folder = "paxos";
+static void allocate_name_folder(char **dest, char *name, int id) {
+  char *folder = "paxos";
   size_t f_len = strlen(folder);
   size_t len = strlen(name);
   *dest = pmalloc(f_len + len + 3);
@@ -133,24 +117,20 @@ allocate_name_folder(char** dest, char* name, int id)
   (*dest)[f_len + len + 2] = '\0';
 }
 
-static int
-major_number(int id, char* name)
-{
+static int major_number(int id, char *name) {
   allocate_name_folder(&de_name, name, id);
   majorNumber = register_chrdev(0, de_name, &fops);
   if (majorNumber < 0) {
     paxerr("register major number");
     return majorNumber;
   }
-  printk(KERN_INFO"Device Char: Device Char %s registered correctly with major"
-                  " number %d",
-                  de_name, majorNumber);
+  printk(KERN_INFO "Device Char: Device Char %s registered correctly with major"
+                   " number %d",
+         de_name, majorNumber);
   return 0;
 }
 
-static int
-reg_dev_class(int id, char* name)
-{
+static int reg_dev_class(int id, char *name) {
   allocate_name(&clas_name, name, id);
   charClass = class_create(THIS_MODULE, clas_name);
   if (IS_ERR(charClass)) {
@@ -158,14 +138,12 @@ reg_dev_class(int id, char* name)
     paxerr("register device class");
     return -1;
   }
-  printk(KERN_INFO"Device Char: device class %s registered correctly",
-                  clas_name);
+  printk(KERN_INFO "Device Char: device class %s registered correctly",
+         clas_name);
   return 0;
 }
 
-static int
-reg_char_class(void)
-{
+static int reg_char_class(void) {
   charDevice =
       device_create(charClass, NULL, MKDEV(majorNumber, 0), NULL, de_name);
   if (IS_ERR(charDevice)) {
@@ -177,12 +155,10 @@ reg_char_class(void)
   return 0;
 }
 
-int
-kdevchar_init(int id, char* name)
-{
+int kdevchar_init(int id, char *name) {
   if (name == NULL)
     return 0;
-  printk(KERN_INFO"Client: Initializing the Device Char");
+  printk(KERN_INFO "Client: Initializing the Device Char");
   working = 1;
 
   // Register major number
@@ -197,21 +173,19 @@ kdevchar_init(int id, char* name)
   if (reg_char_class() < 0)
     return -1;
 
-//  msg_buf = vmalloc(sizeof(struct user_msg*) * BUFFER_SIZE);
-//  for (size_t i = 0; i < BUFFER_SIZE; i++) {
-//    msg_buf[i] = vmalloc(sizeof(struct user_msg) + ETH_DATA_LEN);
-//  }
+  //  msg_buf = vmalloc(sizeof(struct user_msg*) * BUFFER_SIZE);
+  //  for (size_t i = 0; i < BUFFER_SIZE; i++) {
+  //    msg_buf[i] = vmalloc(sizeof(struct user_msg) + ETH_DATA_LEN);
+  //  }
 
   mutex_init(&char_mutex);
   init_waitqueue_head(&access_wait);
   atomic_set(&used_buf, 0);
-  printk(KERN_INFO"Device Char: device class created correctly");
+  printk(KERN_INFO "Device Char: device class created correctly");
   return 0;
 }
 
-void
-kdevchar_exit(void)
-{
+void kdevchar_exit(void) {
   working = 0;
   atomic_inc(&used_buf);
   wake_up_interruptible(&access_wait);
@@ -220,13 +194,15 @@ kdevchar_exit(void)
   class_unregister(charClass); // unregister the device class
   class_destroy(charClass);    // remove the device class
 
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    vfree(msg_buf[i]);
+  if (msg_buf) {
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+      vfree(msg_buf[i]);
+    }
+    vfree(msg_buf);
   }
-  vfree(msg_buf);
 
   pfree(de_name);
   pfree(clas_name);
   unregister_chrdev(majorNumber, de_name); // unregister the major number
-  printk(KERN_INFO"Device Char: Unloaded\n");
+  printk(KERN_INFO "Device Char: Unloaded\n");
 }
