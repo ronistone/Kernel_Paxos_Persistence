@@ -5,26 +5,25 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #endif
-struct client_value
-{
-  int            client_id;
+#define MSG_LEN 64
+
+struct client_value {
+  int client_id;
   struct timeval t;
-  size_t         size;
-  char           value[0];
-};
-
-struct user_msg
-{
   size_t size;
-  char   value[0];
+  char value[0];
 };
 
-struct stats
-{
-  long   min_latency;
-  long   max_latency;
-  long   avg_latency;
-  int    delivered_count;
+struct user_msg {
+  size_t size;
+  char value[0];
+};
+
+struct stats {
+  long min_latency;
+  long max_latency;
+  long avg_latency;
+  int delivered_count;
   size_t delivered_bytes;
 };
 

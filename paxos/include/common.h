@@ -7,9 +7,11 @@
 #define prealloc(ptr, size) krealloc(ptr, size, GFP_ATOMIC)
 #define pfree(ptr) kfree(ptr)
 
-extern const char* MOD_NAME;
+extern const char *MOD_NAME;
 
 typedef uint8_t eth_address;
+
+#define MSG_LEN 64
 
 #define LOG_DEBUG(fmt, args...)                                                \
   printk(KERN_DEBUG "%s: " fmt "\n", MOD_NAME, ##args)
