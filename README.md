@@ -17,6 +17,6 @@ or ``sudo ./build/user_chardev -c /dev/paxos/persistence0 -v`` to see all messag
 
 ## Unloading everything
 
-Kill the application with CTRL+C and check to throughput.
+Kill the application with CTRL+C and check the throughput.
 
 Unload the module with ``sudo rmmod persistence`` 
