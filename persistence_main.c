@@ -19,6 +19,7 @@ MODULE_DESCRIPTION("Module to persist data from the kernel");
 MODULE_VERSION("0.1");
 
 static int id = 0;
+const char* MOD_NAME = "Persistence";
 
 static int __init paxos_persistence_init(void) {
   printk(KERN_INFO "PAXOS PERSISTENCE: Initializing paxos persistence");

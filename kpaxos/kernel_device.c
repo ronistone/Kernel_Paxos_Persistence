@@ -60,6 +60,8 @@ ssize_t kdev_read(struct file *filep, char *buffer, size_t len,
   llen = sizeof(struct user_msg) + msg_buf->size;
   error_count = copy_to_user(buffer, (char *)msg_buf, llen);
 
+  LOG_INFO("Device char: read %zu bytes!", llen);
+
   atomic_inc(&used_buf);
   if (error_count != 0) {
     paxerr("send fewer characters to the user");
@@ -82,6 +84,7 @@ ssize_t kdev_write(struct file *filep, const char *buffer, size_t len,
     len = 0;
   }
 
+  LOG_INFO("Device char: write %zu bytes!", len);
   return len;
 }
 
