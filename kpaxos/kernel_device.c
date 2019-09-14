@@ -12,96 +12,10 @@
 
 #define BUFFER_SIZE 100000
 
-static struct mutex char_mutex;
-// static struct mutex buffer_mutex;
 
-// The device-driver class struct pointer
-static struct class *charClass = NULL;
-// The device-driver device struct pointer
-static struct device *charDevice = NULL;
-static wait_queue_head_t access_wait;
-static char *de_name, *clas_name;
-static int majorNumber, working;
-static struct user_msg *msg_buf = NULL;
-static atomic_t used_buf;
-
-struct file_operations fops = {
-    .owner = THIS_MODULE,
-    .open = kdev_open,
-    .read = kdev_read,
-    .write = kdev_write,
-    .release = kdev_release,
-    .poll = kdev_poll,
-};
-
-static void paxerr(char *err) {
+void paxerr(char *err) {
   printk(KERN_ALERT "Device Char: failed to %s", err);
   // working = 0;
-}
-
-int kdev_open(struct inode *inodep, struct file *filep) {
-  if (!mutex_trylock(&char_mutex)) {
-    printk(KERN_ALERT "Device char: Device used by another process");
-    return -EBUSY;
-  }
-  return 0;
-}
-
-// returns 0 if it has to stop, >0 when it reads something, and <0 on error
-ssize_t kdev_read(struct file *filep, char *buffer, size_t len,
-                  loff_t *offset) {
-  int error_count;
-  size_t llen;
-
-  if (!working)
-    return 0;
-
-  atomic_dec(&used_buf);
-  llen = sizeof(struct user_msg) + msg_buf->size;
-  error_count = copy_to_user(buffer, (char *)msg_buf, llen);
-
-  LOG_INFO("Device char: read %zu bytes!", llen);
-
-  atomic_inc(&used_buf);
-  if (error_count != 0) {
-    paxerr("send fewer characters to the user");
-    return -1;
-  }
-
-  return llen;
-}
-
-ssize_t kdev_write(struct file *filep, const char *buffer, size_t len,
-                   loff_t *offset) {
-  if (working == 0)
-    return -1;
-
-  struct user_msg *tmp = (struct user_msg *)buffer;
-  if (tmp->size > 0 && tmp->size <= MSG_LEN) {
-    msg_buf->size = tmp->size;
-    memcpy(msg_buf->value, tmp->value, tmp->size);
-  } else {
-    len = 0;
-  }
-
-  LOG_INFO("Device char: write %zu bytes!", len);
-  return len;
-}
-
-unsigned int kdev_poll(struct file *file, poll_table *wait) {
-  poll_wait(file, &access_wait, wait);
-  if (atomic_read(&used_buf) > 0)
-    return POLLIN;
-
-  return 0;
-}
-
-int kdev_release(struct inode *inodep, struct file *filep) {
-  mutex_unlock(&char_mutex);
-  // LOG_INFO("Messages left %d", atomic_read(&used_buf));
-  atomic_set(&used_buf, 1);
-  printk(KERN_INFO "Device Char: Device successfully closed");
-  return 0;
 }
 
 static void allocate_name(char **dest, char *name, int id) {
@@ -125,88 +39,95 @@ static void allocate_name_folder(char **dest, char *name, int id) {
   (*dest)[f_len + len + 2] = '\0';
 }
 
-static int major_number(int id, char *name) {
-  allocate_name_folder(&de_name, name, id);
-  majorNumber = register_chrdev(0, de_name, &fops);
-  if (majorNumber < 0) {
+static int major_number(int id, char *name, paxos_kernel_device* kernelDevice) {
+  allocate_name_folder(&(kernelDevice -> de_name), name, id);
+  kernelDevice -> majorNumber = register_chrdev(0, kernelDevice -> de_name, &(kernelDevice -> fops));
+  if (kernelDevice -> majorNumber < 0) {
     paxerr("register major number");
-    return majorNumber;
+    return kernelDevice -> majorNumber;
   }
   printk(KERN_INFO "Device Char: Device Char %s registered correctly with major"
                    " number %d",
-         de_name, majorNumber);
+         kernelDevice -> de_name, kernelDevice -> majorNumber);
   return 0;
 }
 
-static int reg_dev_class(int id, char *name) {
-  allocate_name(&clas_name, name, id);
-  charClass = class_create(THIS_MODULE, clas_name);
-  if (IS_ERR(charClass)) {
-    unregister_chrdev(majorNumber, de_name);
+static int reg_dev_class(int id, char *name, paxos_kernel_device* kernelDevice) {
+  allocate_name(&(kernelDevice -> clas_name), name, id);
+  kernelDevice -> charClass = class_create(THIS_MODULE, kernelDevice -> clas_name);
+  if (IS_ERR(kernelDevice -> charClass)) {
+    unregister_chrdev(kernelDevice -> majorNumber, kernelDevice -> de_name);
     paxerr("register device class");
     return -1;
   }
   printk(KERN_INFO "Device Char: device class %s registered correctly",
-         clas_name);
+         kernelDevice -> clas_name);
   return 0;
 }
 
-static int reg_char_class(void) {
-  charDevice =
-      device_create(charClass, NULL, MKDEV(majorNumber, 0), NULL, de_name);
-  if (IS_ERR(charDevice)) {
-    class_destroy(charClass);
-    unregister_chrdev(majorNumber, de_name);
+static int reg_char_class(paxos_kernel_device* kernelDevice) {
+  kernelDevice -> charDevice =
+      device_create(
+          kernelDevice -> charClass,
+          NULL,
+          MKDEV( kernelDevice -> majorNumber, kernelDevice -> minorNumber),
+          NULL,
+          kernelDevice -> de_name
+      );
+
+  if (IS_ERR(kernelDevice -> charDevice)) {
+    class_destroy(kernelDevice -> charClass);
+    unregister_chrdev(kernelDevice -> majorNumber, kernelDevice -> de_name);
     paxerr("create the device");
     return -1;
   }
   return 0;
 }
 
-int kdevchar_init(int id, char *name) {
-  if (name == NULL)
+int kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device) {
+  if (name == NULL || kernel_device == NULL)
     return 0;
   printk(KERN_INFO "Initializing the Device Char");
-  working = 1;
+  kernel_device -> working = 1;
 
   // Register major number
-  if (major_number(id, name) < 0)
+  if (major_number(id, name, kernel_device) < 0)
     return -1;
 
   // Register the device class
-  if (reg_dev_class(id, name) < 0)
+  if (reg_dev_class(id, name, kernel_device) < 0)
     return -1;
 
   // Register the device driver
-  if (reg_char_class() < 0)
+  if (reg_char_class(kernel_device) < 0)
     return -1;
 
-  msg_buf = vmalloc(sizeof(struct user_msg) + MSG_LEN);
-  msg_buf->size = MSG_LEN;
-  strcpy(msg_buf->value, "HI there! If you see this message, you've read "
+  kernel_device -> msg_buf = vmalloc(sizeof(struct user_msg) + MSG_LEN);
+  kernel_device -> msg_buf->size = MSG_LEN;
+  strcpy(kernel_device -> msg_buf->value, "HI there! If you see this message, you've read "
                          "from a char device");
 
-  mutex_init(&char_mutex);
-  init_waitqueue_head(&access_wait);
-  atomic_set(&used_buf, 1);
+  mutex_init(& (kernel_device -> char_mutex));
+  init_waitqueue_head(&(kernel_device -> access_wait));
+  atomic_set(&(kernel_device -> used_buf), 1);
   printk(KERN_INFO "Device class created correctly");
   return 0;
 }
 
-void kdevchar_exit(void) {
-  working = 0;
-  atomic_inc(&used_buf);
-  wake_up_interruptible(&access_wait);
-  mutex_destroy(&char_mutex);
-  device_destroy(charClass, MKDEV(majorNumber, 0)); // remove the device
-  class_unregister(charClass); // unregister the device class
-  class_destroy(charClass);    // remove the device class
+void kdevchar_exit(paxos_kernel_device* kernel_device) {
+  kernel_device -> working = 0;
+  atomic_inc(&(kernel_device -> used_buf));
+  wake_up_interruptible(&(kernel_device -> access_wait));
+  mutex_destroy(&(kernel_device -> char_mutex));
+  device_destroy(kernel_device -> charClass, MKDEV(kernel_device -> majorNumber, kernel_device -> minorNumber)); // remove the device
+  class_unregister(kernel_device -> charClass); // unregister the device class
+  class_destroy(kernel_device -> charClass);    // remove the device class
 
-  if (msg_buf)
-    vfree(msg_buf);
+  if (kernel_device -> msg_buf)
+    vfree(kernel_device -> msg_buf);
 
-  pfree(de_name);
-  pfree(clas_name);
-  unregister_chrdev(majorNumber, de_name); // unregister the major number
+  pfree(kernel_device -> de_name);
+  pfree(kernel_device -> clas_name);
+  unregister_chrdev(kernel_device -> majorNumber, kernel_device -> de_name); // unregister the major number
   printk(KERN_INFO "Unloaded\n");
 }

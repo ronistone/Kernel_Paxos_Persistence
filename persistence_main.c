@@ -10,6 +10,7 @@
 #include <linux/uaccess.h>
 
 #include "kernel_device.h"
+#include "kleaner_device_operations.h"
 
 #define DEVICE_NAME "paxoschar"
 #define CLASS_NAME "paxos"
@@ -21,11 +22,16 @@ MODULE_VERSION("0.1");
 static int id = 0;
 const char* MOD_NAME = "Persistence";
 
+static paxos_kernel_device klearnerDevice;
+
 static int __init paxos_persistence_init(void) {
   printk(KERN_INFO "PAXOS PERSISTENCE: Initializing paxos persistence");
   printk(KERN_INFO "");
 
-  kdevchar_init(id, "persistence");
+  klearnerDevice = createKLeanerDevice();
+
+  kdevchar_init(id, "persistence", &klearnerDevice);
+  kdevchar_init(id, "oloco", &klearnerDevice);
 
   printk(KERN_INFO "PAXOS PERSISTENCE: paxos persistence initialized");
   printk(KERN_INFO "");
@@ -33,7 +39,7 @@ static int __init paxos_persistence_init(void) {
 }
 
 static void __exit paxos_persistence_exit(void) {
-  kdevchar_exit();
+  kdevchar_exit(&klearnerDevice);
   printk(KERN_INFO "PAXOS PERSISTENCE: goodbye");
   printk(KERN_INFO "");
 }

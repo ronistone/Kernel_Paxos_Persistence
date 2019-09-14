@@ -7,12 +7,24 @@
 #include <linux/time.h>
 #include <linux/netdevice.h>
 
-extern int          kdev_open(struct inode*, struct file*);
-extern int          kdev_release(struct inode*, struct file*);
-extern ssize_t      kdev_read(struct file*, char*, size_t, loff_t*);
-extern ssize_t      kdev_write(struct file*, const char*, size_t, loff_t*);
-extern int          kdevchar_init(int id, char* name);
-extern unsigned int kdev_poll(struct file*, poll_table* wait);
-extern void         kdevchar_exit(void);
+struct paxos_kernel_device {
+    struct mutex char_mutex;
+
+    struct class *charClass;
+    struct device *charDevice;
+    wait_queue_head_t access_wait;
+    char *de_name, *clas_name;
+    int majorNumber, minorNumber, working;
+    struct user_msg *msg_buf;
+    atomic_t used_buf;
+
+    struct file_operations fops;
+};
+
+typedef struct paxos_kernel_device paxos_kernel_device;
+
+extern void         paxerr(char *err);
+extern int          kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device);
+extern void         kdevchar_exit(paxos_kernel_device* kernel_device);
 
 #endif
