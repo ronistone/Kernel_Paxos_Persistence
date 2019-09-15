@@ -12,6 +12,8 @@
 
 #define BUFFER_SIZE 100000
 
+static int majorNumber = 0;
+
 
 void paxerr(char *err) {
   printk(KERN_ALERT "Device Char: failed to %s", err);
@@ -41,8 +43,9 @@ static void allocate_name_folder(char **dest, char *name, int id) {
 
 static int major_number(int id, char *name, paxos_kernel_device* kernelDevice) {
   allocate_name_folder(&(kernelDevice -> de_name), name, id);
-  kernelDevice -> majorNumber = register_chrdev(0, kernelDevice -> de_name, &(kernelDevice -> fops));
-  if (kernelDevice -> majorNumber < 0) {
+  majorNumber = register_chrdev(majorNumber, kernelDevice -> de_name, &(kernelDevice -> fops));
+  kernelDevice -> majorNumber = majorNumber;
+  if (majorNumber < 0) {
     paxerr("register major number");
     return kernelDevice -> majorNumber;
   }

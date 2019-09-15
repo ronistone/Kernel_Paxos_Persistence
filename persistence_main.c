@@ -22,7 +22,7 @@ MODULE_VERSION("0.1");
 static int id = 0;
 const char* MOD_NAME = "Persistence";
 
-static paxos_kernel_device klearnerDevice;
+static paxos_kernel_device* klearnerDevice = NULL;
 
 static int __init paxos_persistence_init(void) {
   printk(KERN_INFO "PAXOS PERSISTENCE: Initializing paxos persistence");
@@ -30,8 +30,7 @@ static int __init paxos_persistence_init(void) {
 
   klearnerDevice = createKLeanerDevice();
 
-  kdevchar_init(id, "persistence", &klearnerDevice);
-  kdevchar_init(id, "oloco", &klearnerDevice);
+  kdevchar_init(id, "persistence", klearnerDevice);
 
   printk(KERN_INFO "PAXOS PERSISTENCE: paxos persistence initialized");
   printk(KERN_INFO "");
@@ -39,7 +38,7 @@ static int __init paxos_persistence_init(void) {
 }
 
 static void __exit paxos_persistence_exit(void) {
-  kdevchar_exit(&klearnerDevice);
+  kdevchar_exit(klearnerDevice);
   printk(KERN_INFO "PAXOS PERSISTENCE: goodbye");
   printk(KERN_INFO "");
 }

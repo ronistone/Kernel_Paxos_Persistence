@@ -3,7 +3,9 @@ obj-m+= \
 #kpaxos/kernel_device.o
 
 persistence-y:= \
-	persistence_main.o kpaxos/kernel_device.o kpaxos/kleaner_device_operations.o
+	kpaxos/kleaner_device_operations.o \
+	kpaxos/kernel_device.o \
+	persistence_main.o \
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 BUILD_DIR ?= $(PWD)/build

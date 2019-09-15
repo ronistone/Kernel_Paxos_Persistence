@@ -10,6 +10,7 @@ paxos_kernel_device kleanerDevice;
 
 
 int klearner_open(struct inode *inodep, struct file *filep) {
+    LOG_DEBUG( "Mutex Address %p", &(kleanerDevice.char_mutex));
     if (!mutex_trylock(&(kleanerDevice.char_mutex))) {
         printk(KERN_ALERT "Device char: Device used by another process");
         return -EBUSY;
@@ -74,7 +75,7 @@ int klearner_release(struct inode *inodep, struct file *filep) {
     return 0;
 }
 
-paxos_kernel_device createKLeanerDevice(void) {
+paxos_kernel_device* createKLeanerDevice(void) {
 
     kleanerDevice.msg_buf = NULL;
     kleanerDevice.charClass = NULL;
@@ -88,5 +89,5 @@ paxos_kernel_device createKLeanerDevice(void) {
     kleanerDevice.fops.release = klearner_release;
     kleanerDevice.fops.poll = klearner_poll;
 
-    return kleanerDevice;
+    return &kleanerDevice;
 }
