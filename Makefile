@@ -15,12 +15,15 @@ C_COMP:= -std=c99
 G_COMP:= -std=gnu99
 USR_FLAGS:= -Wall -D user_space
 USRC_OBJS := $(BUILD_DIR)/user_chardev.o
+USRSTOR_OBJS := $(BUILD_DIR)/user_storage.o
 
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
+THREAD_FLAG:= -lpthread
+DEBUG_FLAGS:= -g -DDEBUG
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
 
-all: $(BUILD_DIR) kernel_app user_chardev
+all: $(BUILD_DIR) kernel_app user_chardev user_storage
 
 #	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
 #	$(CC) testekerneldevice.c -o test
@@ -41,6 +44,14 @@ $(BUILD_DIR)/%.o: kpaxos/%.c
 user_chardev: $(USRC_OBJS)
 	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) -o $(BUILD_DIR)/$@ $^
 
+user_storage: $(USRSTOR_OBJS)
+	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(THREAD_FLAG) -o $(BUILD_DIR)/$@ $^
+
 clean:
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) clean
 	-rm -rf build
+
+debug: $(BUILD_DIR) debug_command user_chardev user_storage
+
+debug_command: $(BUILD_DIR_MAKEFILE)
+	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) modules EXTRA_CFLAGS="$(EXTRA_CFLAGS) $(DEBUG_FLAGS)"
