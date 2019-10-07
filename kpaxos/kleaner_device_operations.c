@@ -4,7 +4,7 @@
 #include "kernel_device.h"
 #include "kernel_client.h"
 #include "common.h"
-
+#include "write_persistence_device_operations.h"
 
 paxos_kernel_device kleanerDevice;
 
@@ -21,25 +21,10 @@ int klearner_open(struct inode *inodep, struct file *filep) {
 // returns 0 if it has to stop, >0 when it reads something, and <0 on error
 ssize_t klearner_read(struct file *filep, char *buffer, size_t len,
                   loff_t *offset) {
-    int error_count;
-    size_t llen;
+  if (kleanerDevice.working == 0)
+    return -1;
 
-    if (!kleanerDevice.working)
-        return 0;
-
-    atomic_dec(&(kleanerDevice.used_buf));
-    llen = sizeof(struct user_msg) + (kleanerDevice.msg_buf->size);
-    error_count = copy_to_user(buffer, (char *)(kleanerDevice.msg_buf), llen);
-
-    LOG_INFO("Device char: read %zu bytes!", llen);
-
-    atomic_inc(&(kleanerDevice.used_buf));
-    if (error_count != 0) {
-        paxerr("send fewer characters to the user");
-        return -1;
-    }
-
-    return llen;
+  return len;
 }
 
 ssize_t klearner_write(struct file *filep, const char *buffer, size_t len,
@@ -47,15 +32,9 @@ ssize_t klearner_write(struct file *filep, const char *buffer, size_t len,
     if (kleanerDevice.working == 0)
         return -1;
 
-    struct user_msg *tmp = (struct user_msg *)buffer;
-    if (tmp->size > 0 && tmp->size <= MSG_LEN) {
-        kleanerDevice.msg_buf->size = tmp->size;
-        memcpy(kleanerDevice.msg_buf->value, tmp->value, tmp->size);
-    } else {
-        len = 0;
-    }
+    printk(KERN_INFO "Writing the message %s\n", buffer);
+    write_persistence_add_message(buffer, len);
 
-    LOG_INFO("Device char: write %zu bytes!", len);
     return len;
 }
 
@@ -80,7 +59,6 @@ paxos_kernel_device* createKLeanerDevice(void) {
     kleanerDevice.msg_buf = NULL;
     kleanerDevice.charClass = NULL;
     kleanerDevice.charDevice = NULL;
-    kleanerDevice.minorNumber = 1;
 
     kleanerDevice.fops.owner = THIS_MODULE;
     kleanerDevice.fops.open = klearner_open;

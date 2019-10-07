@@ -38,10 +38,10 @@ void* readProcess(){
 }
 
 void* writeProcess() {
-  int readDevice = open("/dev/paxos/test_persistence_write", O_RDWR);
+  int readDevice = open("/dev/paxos/persistence0", O_WRONLY);
   int fd, ret;
   char stringToSend[BUFFER_LENGTH];
-  if(fd < 0) {
+  if(readDevice < 0) {
     perror("Failed to open the write char device");
     return NULL;
   }
@@ -51,10 +51,11 @@ void* writeProcess() {
     scanf("%[^\n]%*c", stringToSend);
     printf("Writing message to the device [%s].\n", stringToSend);
 
-    ret = write(fd, stringToSend, strlen(stringToSend));
+    ret = write(readDevice, stringToSend, strlen(stringToSend));
 
     if (ret < 0) {
       perror("Failed to write message the char device");
+      close(fd);
       return NULL;
     }
   }
@@ -69,10 +70,10 @@ int main() {
 
   printf("Starting device test code\n");
 
-  pthread_create(&readThread, NULL, readProcess, NULL);
+//  pthread_create(&readThread, NULL, readProcess, NULL);
   pthread_create(&writeThread, NULL, writeProcess, NULL);
 
-  pthread_join(readThread, NULL);
+//  pthread_join(readThread, NULL);
   pthread_join(writeThread, NULL);
 
   return 0;

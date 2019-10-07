@@ -1,8 +1,8 @@
 obj-m+= \
 	persistence.o
-#kpaxos/kernel_device.o
 
 persistence-y:= \
+	kpaxos/write_persistence_device_operations.o \
 	kpaxos/kleaner_device_operations.o \
 	kpaxos/kernel_device.o \
 	persistence_main.o \
@@ -18,7 +18,7 @@ USRC_OBJS := $(BUILD_DIR)/user_chardev.o
 USRSTOR_OBJS := $(BUILD_DIR)/user_storage.o
 
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
-THREAD_FLAG:= -lpthread
+EXTRASTORE_FLAG:= -lpthread -llmdb
 DEBUG_FLAGS:= -g -DDEBUG
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
@@ -45,7 +45,7 @@ user_chardev: $(USRC_OBJS)
 	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) -o $(BUILD_DIR)/$@ $^
 
 user_storage: $(USRSTOR_OBJS)
-	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(THREAD_FLAG) -o $(BUILD_DIR)/$@ $^
+	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) -o $(BUILD_DIR)/$@ $^
 
 clean:
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) clean
