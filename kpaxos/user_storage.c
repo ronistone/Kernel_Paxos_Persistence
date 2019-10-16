@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 
 #define DEFAULT_SIZE 10*1024*1024
@@ -23,7 +24,7 @@
   "********CCCCCCCCLLLLLLLLIIIIIIIIEEEEEEEENNNNNNNNTTTTTTTT*******"
 
 static int stop = 0, verbose = 0;
-const char *read_device_path, *write_device_path, *db_env_path;
+const char *read_device_path, *write_device_path, *db_env_path = "/tmp/paxos";
 pthread_t read_thread, write_thread;
 size_t lmdb_mapsize = DEFAULT_SIZE;
 
@@ -41,7 +42,6 @@ void usage(const char *name) {
   printf("  %-30s%s\n", "-r, --read-chardev_path #", "Kernel paxos lmdb query kernel device path");
   printf("  %-30s%s\n", "-w, --write-chardev_path #", "Kernel paxos lmdb write kernel device path");
   printf("  %-30s%s%d\n", "-m, --lmdb-mapsize #", "lmdb database limit size by default it is ", DEFAULT_SIZE);
-  printf("  %-30s%s\n", "-f, --lmdb-file-path #", "lmdb database file path");
   exit(1);
 }
 
@@ -50,7 +50,6 @@ static void check_args(int argc, char *argv[]) {
   static struct option options[] = {{"write-chardev-path", required_argument, 0, 'w'},
                                     {"read-chardev-path", required_argument, 0, 'r'},
                                     {"lmdb-mapsize", required_argument, 0, 'm'},
-                                    {"lmdb-file-path", required_argument, 0, 'f'},
                                     {"help", no_argument, 0, 'h'},
                                     {"verbose", no_argument, 0, 'v'},
                                     {0, 0, 0, 0}};
@@ -66,9 +65,6 @@ static void check_args(int argc, char *argv[]) {
     case 'm':
       lmdb_mapsize = atoi(optarg);
       break;
-    case 'f':
-      db_env_path = optarg;
-      break;
     case 'v':
       verbose = 1;
       break;
@@ -83,80 +79,82 @@ static void stop_execution(int signal) {
   printf("Finishing Threads...\n");
 }
 
-//static int
-//lmdb_compare_iid(const MDB_val* lhs, const MDB_val* rhs)
-//{
-//    iid_t lid, rid;
-//    assert(lhs->mv_size == sizeof(iid_t));
-//    assert(rhs->mv_size == sizeof(iid_t));
-//    lid = *((iid_t*) lhs->mv_data);
-//    rid = *((iid_t*) rhs->mv_data);
-//    return (lid == rid) ? 0 : (lid < rid) ? -1 : 1;
-//}
+static int
+lmdb_compare_iid(const MDB_val* lhs, const MDB_val* rhs)
+{
+    iid_t lid, rid;
+    assert(lhs->mv_size == sizeof(iid_t));
+    assert(rhs->mv_size == sizeof(iid_t));
+    lid = *((iid_t*) lhs->mv_data);
+    rid = *((iid_t*) rhs->mv_data);
+    return (lid == rid) ? 0 : (lid < rid) ? -1 : 1;
+}
 
-//static int
-//lmdb_storage_init(struct lmdb_storage* s)
-//{
-//    int result;
-//    struct stat sb;
-//    MDB_env* env = NULL;
-//    MDB_txn* txn = NULL;
-//    MDB_dbi dbi = 0;
-//
-//    int dir_exists = (stat(db_env_path, &sb) == 0);
-//
-//    if (!dir_exists && (mkdir(db_env_path, S_IRWXU) != 0)) {
-//      printf("Failed to create env dir %s", db_env_path);
-//      result = -1;
-//      goto error;
-//    }
-//
-//    if ((result = mdb_env_create(&env)) != 0) {
-//        printf("Could not create lmdb environment. %s\n", mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_env_set_mapsize(env, lmdb_mapsize)) != 0) {
-//        printf("Could not set lmdb map size. %s\n", mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_env_open(env, db_env_path, 0, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) != 0) {
-//        printf("Could not open lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_txn_begin(env, NULL, 0, &txn)) != 0) {
-//        printf("Could not start txn on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_open(txn, NULL, MDB_INTEGERKEY, &dbi)) != 0) {
-//        printf("Could not open db on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_set_compare(txn, dbi, lmdb_compare_iid)) != 0) {
-//        printf("Could setup compare function on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
-//        goto error;
-//    }
-//    if ((result = mdb_txn_commit(txn)) != 0) {
-//        printf("Could commit txn on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
-//        goto error;
-//    }
-//
-//    s->env = env;
-//    s->dbi = dbi;
-//
-//    return 0;
-//    error:
-//    if (txn) {
-//        mdb_txn_abort(txn);
-//    }
-//    if (dbi) {
-//        mdb_close(env, dbi);
-//    }
-//    if (env) {
-//        mdb_env_close(env);
-//    }
-//    return -1;
-//}
-//
+static int
+lmdb_storage_init(struct lmdb_storage* s)
+{
+    int result;
+    struct stat sb;
+    MDB_env* env = NULL;
+    MDB_txn* txn = NULL;
+    MDB_dbi dbi = 0;
+
+    int dir_exists = (stat(db_env_path, &sb) == 0);
+
+    if (!dir_exists && (mkdir(db_env_path, S_IRWXU) != 0)) {
+      printf("Failed to create env dir %s", db_env_path);
+      result = -1;
+      goto error;
+    }
+
+    if ((result = mdb_env_create(&env)) != 0) {
+        printf("Could not create lmdb environment. %s\n", mdb_strerror(result));
+        goto error;
+    }
+    if ((result = mdb_env_set_mapsize(env, lmdb_mapsize)) != 0) {
+        printf("Could not set lmdb map size. %s\n", mdb_strerror(result));
+        goto error;
+    }
+
+    if ((result = mdb_env_open(env, db_env_path, 0, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) != 0) {
+        printf("%d\n", result);
+        printf("Could not open lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
+        goto error;
+    }
+    if ((result = mdb_txn_begin(env, NULL, 0, &txn)) != 0) {
+        printf("Could not start txn on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
+        goto error;
+    }
+    if ((result = mdb_open(txn, NULL, MDB_INTEGERKEY, &dbi)) != 0) {
+        printf("Could not open db on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
+        goto error;
+    }
+    if ((result = mdb_set_compare(txn, dbi, lmdb_compare_iid)) != 0) {
+        printf("Could setup compare function on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
+        goto error;
+    }
+    if ((result = mdb_txn_commit(txn)) != 0) {
+        printf("Could commit txn on lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
+        goto error;
+    }
+
+    s->env = env;
+    s->dbi = dbi;
+
+    return 0;
+    error:
+    if (txn) {
+        mdb_txn_abort(txn);
+    }
+    if (dbi) {
+        mdb_close(env, dbi);
+    }
+    if (env) {
+        mdb_env_close(env);
+    }
+    return -1;
+}
+
 static void* read_storage_thread(void* param) {
 
   int fd = 1;
@@ -251,12 +249,12 @@ static void run(){
 
 int main(int argc, char *argv[]) {
   check_args(argc, argv);
-  if (read_device_path == NULL || write_device_path == NULL || db_env_path == NULL)
+  if (read_device_path == NULL || write_device_path == NULL)
     usage(argv[0]);
   signal(SIGINT, stop_execution);
 
-//  struct lmdb_storage lmdbStorage;
-//  lmdb_storage_init(&lmdbStorage);
-  run();
+  struct lmdb_storage lmdbStorage;
+  lmdb_storage_init(&lmdbStorage);
+//  run();
   return 0;
 }
