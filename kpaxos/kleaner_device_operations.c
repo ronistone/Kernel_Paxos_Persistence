@@ -32,7 +32,7 @@ ssize_t klearner_write(struct file *filep, const char *buffer, size_t len,
     if (kleanerDevice.working == 0)
         return -1;
 
-    printk(KERN_INFO "Writing the message %s\n", buffer);
+    printk(KERN_INFO "Writing the message %zx\n", len);
     write_persistence_add_message(buffer, len);
 
     return len;

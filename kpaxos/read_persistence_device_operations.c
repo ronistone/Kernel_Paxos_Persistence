@@ -6,6 +6,7 @@
 #include "kernel_device.h"
 #include "kernel_client.h"
 #include "common.h"
+#include "paxos_types.h"
 
 
 paxos_kernel_device readPersistenceDevice_;
@@ -30,7 +31,7 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
     return 0;
 
   atomic_dec(&(readPersistenceDevice_.used_buf));
-  llen = sizeof(struct user_msg) + (readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]->size);
+  llen = sizeof(struct paxos_accepted) + (readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]->size);
   error_count = copy_to_user(buffer, (char *)(readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]), llen);
 
   LOG_INFO("Write Persistence Device char: read %zu bytes!", llen);

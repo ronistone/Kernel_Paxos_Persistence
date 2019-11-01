@@ -30,6 +30,8 @@
 
 #include <linux/types.h>
 
+#include "common.h"
+
 typedef unsigned char msgpack_packer;
 
 struct paxos_value

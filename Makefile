@@ -23,7 +23,7 @@ DEBUG_FLAGS:= -g
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
 
-all: $(BUILD_DIR) kernel_app user_chardev user_storage
+all: $(BUILD_DIR) kernel_app user_chardev user_storage teste_kernel_device
 
 #	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
 #	$(CC) testekerneldevice.c -o test
@@ -58,3 +58,6 @@ debug: $(BUILD_DIR) debug_command user_chardev user_storage_debug
 
 debug_command: $(BUILD_DIR_MAKEFILE)
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) modules EXTRA_CFLAGS="$(EXTRA_CFLAGS) $(DEBUG_FLAGS)"
+
+teste_kernel_device:
+	gcc testekerneldevice.c -o build/testes -Ipaxos/include -Ikpaxos/include -lpthread

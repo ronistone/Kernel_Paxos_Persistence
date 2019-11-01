@@ -9,6 +9,7 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
+#include "paxos_types.h"
 
 static int majorNumber = 0;
 
@@ -104,9 +105,9 @@ int kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device) {
   if (reg_char_class(kernel_device) < 0)
     return -1;
 
-  kernel_device -> msg_buf = vmalloc(sizeof(struct user_msg*) * BUFFER_SIZE);
+  kernel_device -> msg_buf = vmalloc(sizeof(struct paxos_accepted*) * BUFFER_SIZE);
   for(size_t i = 0; i < BUFFER_SIZE;i++){
-    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct user_msg) + MSG_LEN);
+    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct paxos_accepted));
   }
 //  kernel_device -> msg_buf->size = MSG_LEN;
 //  strcpy(kernel_device -> msg_buf->value, "HI there! If you see this message, you've read "
