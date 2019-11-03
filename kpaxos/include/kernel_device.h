@@ -17,7 +17,7 @@ struct paxos_kernel_device {
     wait_queue_head_t access_wait;
     char *de_name, *clas_name;
     int majorNumber, working, current_buf, first_buf;
-    struct user_msg** msg_buf;
+    struct paxos_accepted** msg_buf;
     atomic_t used_buf;
 
     struct file_operations fops;

@@ -131,8 +131,8 @@ lmdb_storage_close(void* handle)
   if (s->env) {
     mdb_env_close(s->env);
   }
-  free(s);
-  printf("lmdb storage closed successfully");
+//  free(s);
+  printf("lmdb storage closed successfully\n");
 }
 
 static struct lmdb_storage*
@@ -297,6 +297,34 @@ lmdb_storage_put(void* handle, paxos_accepted* acc)
   return result;
 }
 
+static int
+lmdb_storage_get(void* handle, iid_t iid, paxos_accepted* out)
+{
+  struct lmdb_storage* s = handle;
+  int result;
+  MDB_val key, data;
+
+  memset(&data, 0, sizeof(data));
+
+  key.mv_data = &iid;
+  key.mv_size = sizeof(iid_t);
+
+  if ((result = mdb_get(s->txn, s->dbi, &key, &data)) != 0) {
+    if (result == MDB_NOTFOUND) {
+      printf("There is no record for iid: %d\n", iid);
+    } else {
+      printf("Could not find record for iid: %d : %s\n",
+                      iid, mdb_strerror(result));
+    }
+    return 0;
+  }
+
+  buffer_to_paxos_accepted(data.mv_data, out);
+  assert(iid == out->iid);
+
+  return 1;
+}
+
 //static void* read_storage_thread(void* param) {
 //
 //  int fd = 1;
@@ -340,6 +368,24 @@ lmdb_storage_put(void* handle, paxos_accepted* acc)
 //  return NULL;
 //}
 
+static void test_get_on_lmdb(struct lmdb_storage lmdbStorage, uint32_t id){
+
+  if(lmdb_storage_tx_begin((void*) &lmdbStorage) != 0){
+    printf("Fail to open transaction!\n");
+  }
+  paxos_accepted out;
+  if(lmdb_storage_get((void*) &lmdbStorage, id, &out)!=1){
+    printf("Fail to get in storage!\n");
+    lmdb_storage_tx_abort((void*) &lmdbStorage);
+  } else {
+    printf("found this paxos_accepted %d\n", out.iid);
+  }
+
+  if(lmdb_storage_tx_commit((void*) &lmdbStorage) != 0){
+    printf("Fail to commit transaction!\n");
+  }
+}
+
 static void* write_storage_thread(void* param) {
   struct lmdb_storage lmdbStorage;
   lmdb_storage_open((void*) &lmdbStorage);
@@ -355,6 +401,7 @@ static void* write_storage_thread(void* param) {
   printf("%s\n", write_device_path);
   fd = open(write_device_path, O_RDWR | O_NONBLOCK, 0);
 
+  uint32_t id = 0;
   if (fd > 0) {
     polling.fd = fd;
     polling.events = POLLIN;
@@ -385,6 +432,7 @@ static void* write_storage_thread(void* param) {
         }
       } else {
         printf("No read event\n");
+        test_get_on_lmdb(lmdbStorage, id++);
       }
     }
     lmdb_storage_close((void*) &lmdbStorage);

@@ -44,6 +44,7 @@ paxos_accepted_to_buffer(paxos_accepted* acc)
 //  size_t len = acc->value.paxos_value_len;
 //  char* buffer = malloc(sizeof(paxos_accepted) + len);
   char* buffer = malloc(sizeof(paxos_accepted));
+  memset(buffer, 0, sizeof(paxos_accepted));
   if (buffer == NULL) {
     printf("Fudeu!\n");
     return NULL;
@@ -75,7 +76,7 @@ void* writeProcess() {
     accepted->iid = i;
     stringToSend = paxos_accepted_to_buffer(accepted);
 
-    printf("Writing message to the device [%s].\n", stringToSend);
+    printf("Writing message to the device bytes=[%zu].\n", sizeof(paxos_accepted));
 
     ret = write(readDevice, stringToSend, sizeof(paxos_accepted));
 
