@@ -16,9 +16,11 @@ G_COMP:= -std=gnu99
 USR_FLAGS:= -Wall -D user_space
 USRC_OBJS := $(BUILD_DIR)/user_chardev.o
 USRSTOR_OBJS := $(BUILD_DIR)/user_storage.o
+LMDBOP_OBJS := $(BUILD_DIR)/lmdb_operations.o
 
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
-EXTRASTORE_FLAG:= -lpthread -llmdb
+EXTRALMDB_FLAG:= -llmdb
+EXTRASTORE_FLAG:= -lpthread
 DEBUG_FLAGS:= -g
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
@@ -44,11 +46,11 @@ $(BUILD_DIR)/%.o: kpaxos/%.c
 user_chardev: $(USRC_OBJS)
 	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) -o $(BUILD_DIR)/$@ $^
 
-user_storage: $(USRSTOR_OBJS)
-	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) -o $(BUILD_DIR)/$@ $^
+user_storage: $(LMDBOP_OBJS) $(USRSTOR_OBJS)
+	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) $(EXTRALMDB_FLAG) -o $(BUILD_DIR)/$@ $^
 
-user_storage_debug: $(USRSTOR_OBJS)
-	$(CC) $(DEBUG_FLAGS) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) -o $(BUILD_DIR)/$@ $^
+user_storage_debug: lmdb_operations $(USRSTOR_OBJS)
+	$(CC) $(DEBUG_FLAGS) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) $(EXTRALMDB_FLAG) -o $(BUILD_DIR)/$@ $^
 
 clean:
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) clean
