@@ -21,8 +21,8 @@ Run: ``sudo insmod build/persistence.ko``
 
 ## Running user-space application
 
-Run ``sudo ./build/user_chardev -c /dev/paxos/persistence0``,
-or ``sudo ./build/user_chardev -c /dev/paxos/persistence0 -v`` to see all messages.
+Run ``sudo ./build/user_storage -w /dev/paxos/write-persistence1 -r /dev/paxos/read-persistence2``,
+or ``sudo ./build/user_storage -w /dev/paxos/write-persistence1 -r /dev/paxos/read-persistence2 -v`` to see all messages.
 
 ## Unloading everything
 

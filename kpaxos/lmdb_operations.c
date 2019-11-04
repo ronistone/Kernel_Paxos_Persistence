@@ -153,16 +153,16 @@ lmdb_storage_open(void* handle)
   dir_exists = (stat(lmdb_env_path, &sb) == 0);
 
   if (!dir_exists && (mkdir(lmdb_env_path, S_IRWXU) != 0)) {
-    printf("Failed to create env dir %s: %s",
+    printf("Failed to create env dir %s: %s\n",
            lmdb_env_path, strerror(errno));
     result = -1;
     goto error;
   }
 
   if ((result = lmdb_storage_init(s, lmdb_env_path) != 0)) {
-    printf("Failed to open DB handle");
+    printf("Failed to open DB handle\n");
   } else {
-    printf("lmdb storage opened successfully");
+    printf("lmdb storage opened successfully\n");
     goto cleanup_exit;
   }
 
