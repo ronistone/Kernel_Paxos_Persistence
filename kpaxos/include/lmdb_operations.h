@@ -24,13 +24,13 @@ struct lmdb_storage
     int acceptor_id;
 };
 
-extern int      lmdb_storage_open(void* handle);
-extern int      lmdb_storage_tx_begin(void* handle);
-extern int      lmdb_storage_tx_commit(void* handle);
-extern void     lmdb_storage_tx_abort(void* handle);
-extern void     lmdb_storage_close(void* handle);
-extern int      lmdb_storage_put(void* handle, paxos_accepted* acc);
-extern int      lmdb_storage_get(void* handle, iid_t iid, paxos_accepted* out);
+extern int      lmdb_storage_open(struct lmdb_storage *handle);
+extern int      lmdb_storage_tx_begin(struct lmdb_storage *handle);
+extern int      lmdb_storage_tx_commit(struct lmdb_storage *handle);
+extern void     lmdb_storage_tx_abort(struct lmdb_storage *handle);
+extern void     lmdb_storage_close(struct lmdb_storage *handle);
+extern int      lmdb_storage_put(struct lmdb_storage *handle, paxos_accepted* acc);
+extern int      lmdb_storage_get(struct lmdb_storage *handle, iid_t iid, paxos_accepted* out);
 
 extern void     buffer_to_paxos_accepted(char* buffer, paxos_accepted* out);
 extern char*    paxos_accepted_to_buffer(paxos_accepted* acc);

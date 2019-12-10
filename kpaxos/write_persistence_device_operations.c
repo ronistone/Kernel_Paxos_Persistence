@@ -29,8 +29,7 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
     if (!writePersistenceDevice.working)
         return 0;
 
-//    llen = (writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf]->size);
-    llen = sizeof(paxos_accepted);
+    llen = sizeof(paxos_accepted) + writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf]->value.paxos_value_len;
     error_count = copy_to_user(buffer, (char *)(writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf]), llen);
     atomic_dec(&(writePersistenceDevice.used_buf));
 

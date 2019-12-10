@@ -22,7 +22,7 @@ LMDBOP_OBJS := $(BUILD_DIR)/lmdb_operations.o
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
 EXTRALMDB_FLAG:= -llmdb
 EXTRASTORE_FLAG:= -lpthread
-DEBUG_FLAGS:= -g
+DEBUG_FLAGS:= -ggdb
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
 
@@ -50,17 +50,22 @@ user_chardev: $(USRC_OBJS)
 user_storage: $(LMDBOP_OBJS) $(USRSTOR_OBJS)
 	$(CC) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) $(EXTRALMDB_FLAG) -o $(BUILD_DIR)/$@ $^
 
-user_storage_debug: lmdb_operations $(USRSTOR_OBJS)
+user_storage_debug: $(LMDBOP_OBJS) $(USRSTOR_OBJS)
 	$(CC) $(DEBUG_FLAGS) $(USR_FLAGS) $(EXTRA_CFLAGS) $(EXTRASTORE_FLAG) $(EXTRALMDB_FLAG) -o $(BUILD_DIR)/$@ $^
 
 clean:
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) clean
 	-rm -rf build
 
-debug: $(BUILD_DIR) debug_command user_chardev user_storage_debug
+debug: $(BUILD_DIR) debug_command user_chardev user_storage_debug teste_kernel_device_debug
 
 debug_command: $(BUILD_DIR_MAKEFILE)
 	make -C $(KDIR) M=$(BUILD_DIR) src=$(PWD) modules EXTRA_CFLAGS="$(EXTRA_CFLAGS) $(DEBUG_FLAGS)"
 
+#teste_kernel_device:
+#	gcc testekerneldevice.c -o build/testes -Ipaxos/include -Ikpaxos/
 teste_kernel_device:
 	gcc testekerneldevice.c -o build/testes -Ipaxos/include -Ikpaxos/include -lpthread
+
+teste_kernel_device_debug:
+	gcc -g testekerneldevice.c -o build/testes -Ipaxos/include -Ikpaxos/include -lpthread

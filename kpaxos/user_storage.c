@@ -63,34 +63,37 @@ static void stop_execution(int signal) {
 
 static paxos_accepted* storage_get(struct lmdb_storage lmdbStorage, uint32_t id){
 
-  if(lmdb_storage_tx_begin((void*) &lmdbStorage) != 0){
+  if(lmdb_storage_tx_begin( &lmdbStorage) != 0){
     printf("Fail to open transaction!\n");
   }
   paxos_accepted* out = NULL;
-  if(lmdb_storage_get((void*) &lmdbStorage, id, out)!=1){
+  if(lmdb_storage_get( &lmdbStorage, id, out)!=1){
     printf("Fail to get in storage!\n");
-    lmdb_storage_tx_abort((void*) &lmdbStorage);
+    lmdb_storage_tx_abort( &lmdbStorage);
     return NULL;
   }
 
-  if(lmdb_storage_tx_commit((void*) &lmdbStorage) != 0){
+  if(lmdb_storage_tx_commit( &lmdbStorage) != 0){
     printf("Fail to commit transaction!\n");
   }
   return out;
 }
 
 static int storage_put(struct lmdb_storage lmdbStorage, paxos_accepted* accepted){
-  if(lmdb_storage_tx_begin((void*) &lmdbStorage) != 0){
+  printf("open transaction\n");
+  if(lmdb_storage_tx_begin( &lmdbStorage) != 0){
     printf("Fail to open transaction!\n");
     return 1;
   }
 
-  if(lmdb_storage_put((void*) &lmdbStorage, accepted)!=0){
+  printf("doing put\n");
+  if(lmdb_storage_put( &lmdbStorage, accepted)!=0){
     printf("Fail to put in storage!\n");
-    lmdb_storage_tx_abort((void*) &lmdbStorage);
+    lmdb_storage_tx_abort( &lmdbStorage);
   }
 
-  if(lmdb_storage_tx_commit((void*) &lmdbStorage) != 0){
+  printf("commit transaction\n");
+  if(lmdb_storage_tx_commit( &lmdbStorage) != 0){
     printf("Fail to commit transaction!\n");
     return 1;
   }
@@ -100,7 +103,11 @@ static int storage_put(struct lmdb_storage lmdbStorage, paxos_accepted* accepted
 
 static void* read_storage_thread(void* param) {
   struct lmdb_storage lmdbStorage;
-  lmdb_storage_open((void*) &lmdbStorage);
+  if(lmdb_storage_open( &lmdbStorage) != 0){
+    printf("Fail to open storage on read thread\n");
+    pthread_exit(0);
+    return NULL;
+  }
   int fd = 1;
   struct pollfd polling;
   char *recv;
@@ -123,16 +130,20 @@ static void* read_storage_thread(void* param) {
         len = read(fd, recv, sizeof(paxos_accepted));
         buffer_to_paxos_accepted(recv, accepted);
         if (verbose)
-          printf("READ: Got this: %d\n", accepted->iid);
+          printf("READ: Got this: %d  --> %s\n", accepted->iid, accepted->value.paxos_value_val);
         if (len) {
           paxos_accepted* out = storage_get(lmdbStorage, accepted->iid);
 
           if(out != NULL) {
             printf("READ: found %d, sending to LKM\n", out -> iid);
-//            write(fd, msg, sizeof(msg));
+            char* msg = paxos_accepted_to_buffer(out);
+            write(fd, msg, sizeof(paxos_accepted) + out->value.paxos_value_len);
           } else {
             printf("READ: not found %d, sending not found to LKM\n", accepted -> iid);
-//            write(fd, notmsg, sizeof(notmsg));
+            out = malloc(sizeof(paxos_accepted));
+            out->iid = -1;
+            char* msg = paxos_accepted_to_buffer(out);
+            write(fd, msg, sizeof(paxos_accepted));
           }
 
         }
@@ -140,7 +151,7 @@ static void* read_storage_thread(void* param) {
         printf("READ: No read event\n");
       }
     }
-    lmdb_storage_close((void*) &lmdbStorage);
+    lmdb_storage_close( &lmdbStorage);
     close(fd);
   } else {
     printf("READ: Error while opening the write storage chardev.\n");
@@ -152,15 +163,19 @@ static void* read_storage_thread(void* param) {
 
 static void* write_storage_thread(void* param) {
   struct lmdb_storage lmdbStorage;
-  lmdb_storage_open((void*) &lmdbStorage);
+  if(lmdb_storage_open( &lmdbStorage) != 0){
+    printf("Fail to open storage on write thread\n");
+    pthread_exit(0);
+    return NULL;
+  }
   int fd = 1;
   struct pollfd polling;
   char *recv;
   paxos_accepted* accepted;
   int len = 0;
 
-  recv = malloc(sizeof(paxos_accepted));
-  accepted = malloc(sizeof(paxos_accepted));
+  recv = malloc(sizeof(paxos_accepted) + (sizeof(char) * 200));
+  accepted = malloc(sizeof(paxos_accepted) + (sizeof(char) * 200));
 
   printf("WRITE: %s\n", write_device_path);
   fd = open(write_device_path, O_RDWR | O_NONBLOCK, 0);
@@ -173,17 +188,20 @@ static void* write_storage_thread(void* param) {
       poll(&polling, 1, 2000);
       if (polling.revents & POLLIN) {
         len = read(fd, recv, sizeof(paxos_accepted));
+        printf("%d\n", len);
         buffer_to_paxos_accepted(recv, accepted);
-        if (verbose)
-          printf("WRITE: Got this: %d\n", accepted->iid);
+        if (verbose){
+            printf("WRITE: Got this: %d  --> %s   -> %p\n", accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
+        }
         if (len) {
+          printf("Putting on storage\n");
           storage_put(lmdbStorage, accepted);
         }
       } else {
         printf("WRITE: No read event\n");
       }
     }
-    lmdb_storage_close((void*) &lmdbStorage);
+    lmdb_storage_close( &lmdbStorage);
     close(fd);
   } else {
     printf("WRITE: Error while opening the write storage chardev.\n");

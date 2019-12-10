@@ -47,9 +47,8 @@ lmdb_compare_iid(const MDB_val* lhs, const MDB_val* rhs)
 }
 
 void
-lmdb_storage_close(void* handle)
+lmdb_storage_close(struct lmdb_storage *s)
 {
-  struct lmdb_storage* s = handle;
   if (s->txn) {
     mdb_txn_abort(s->txn);
   }
@@ -138,9 +137,8 @@ lmdb_storage_init(struct lmdb_storage* s, char* db_env_path)
 }
 
 int
-lmdb_storage_open(void* handle)
+lmdb_storage_open(struct lmdb_storage *s)
 {
-  struct lmdb_storage* s = handle;
   char* lmdb_env_path = NULL;
   struct stat sb;
   int dir_exists, result;
@@ -177,17 +175,16 @@ lmdb_storage_open(void* handle)
 }
 
 int
-lmdb_storage_tx_begin(void* handle)
+lmdb_storage_tx_begin(struct lmdb_storage *s)
 {
-  struct lmdb_storage* s = handle;
   assert(s->txn == NULL);
+  printf("Aqui 2 %p \t %p\n", s->env, s->txn);
   return mdb_txn_begin(s->env, NULL, 0, &s->txn);
 }
 
 int
-lmdb_storage_tx_commit(void* handle)
+lmdb_storage_tx_commit(struct lmdb_storage *s)
 {
-  struct lmdb_storage* s = handle;
   int result;
   assert(s->txn);
   result = mdb_txn_commit(s->txn);
@@ -196,9 +193,8 @@ lmdb_storage_tx_commit(void* handle)
 }
 
 void
-lmdb_storage_tx_abort(void* handle)
+lmdb_storage_tx_abort(struct lmdb_storage *s)
 {
-  struct lmdb_storage* s = handle;
   if (s->txn) {
     mdb_txn_abort(s->txn);
     s->txn = NULL;
@@ -206,9 +202,8 @@ lmdb_storage_tx_abort(void* handle)
 }
 
 int
-lmdb_storage_put(void* handle, paxos_accepted* acc)
+lmdb_storage_put(struct lmdb_storage *s, paxos_accepted* acc)
 {
-  struct lmdb_storage* s = handle;
   int result;
   MDB_val key, data;
   char* buffer = paxos_accepted_to_buffer(acc);
@@ -226,9 +221,8 @@ lmdb_storage_put(void* handle, paxos_accepted* acc)
 }
 
 int
-lmdb_storage_get(void* handle, iid_t iid, paxos_accepted* out)
+lmdb_storage_get(struct lmdb_storage *s, iid_t iid, paxos_accepted* out)
 {
-  struct lmdb_storage* s = handle;
   int result;
   MDB_val key, data;
 

@@ -21,8 +21,11 @@ Run: ``sudo insmod build/persistence.ko``
 
 ## Running user-space application
 
-Run ``sudo ./build/user_storage -w /dev/paxos/write-persistence1 -r /dev/paxos/read-persistence2``,
+Run ``sudo ./build/user_storage -w /dev/paxos/write-persistence1 -r /dev/paxos/read-persistence2``,  
 or ``sudo ./build/user_storage -w /dev/paxos/write-persistence1 -r /dev/paxos/read-persistence2 -v`` to see all messages.
+
+## To Test
+Run ``sudo ./build/testes`` to send messages to the kernel space it will send to user_storage to consume
 
 ## Unloading everything
 
