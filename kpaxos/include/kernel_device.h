@@ -7,7 +7,7 @@
 #include <linux/time.h>
 #include <linux/netdevice.h>
 
-#define BUFFER_SIZE 1000
+#define BUFFER_SIZE 10000
 
 struct paxos_kernel_device {
     struct mutex char_mutex;

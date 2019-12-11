@@ -33,7 +33,7 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
     error_count = copy_to_user(buffer, (char *)(writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf]), llen);
     atomic_dec(&(writePersistenceDevice.used_buf));
 
-    LOG_INFO("Write Persistence Device char: read %zu bytes!", llen);
+//    LOG_INFO("Write Persistence Device char: read %zu bytes!", llen);
 
     if (error_count != 0) {
         paxerr("send fewer characters to the user");
@@ -41,11 +41,11 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
     } else {
       writePersistenceDevice.first_buf = (writePersistenceDevice.first_buf + 1) % BUFFER_SIZE;
     }
-    int i;
-    printk("Reading message bytes=[%zu]  ---> ", llen);
-    for(i=0;i< llen;i++)
-      printk("%d", buffer[i]);
-    printk("\n");
+//    int i;
+//    printk("Reading message bytes=[%zu]  ---> ", llen);
+//    for(i=0;i< llen;i++)
+//      printk("%d", buffer[i]);
+//    printk("\n");
     return llen;
 }
 
@@ -79,6 +79,7 @@ void write_persistence_add_message(const char* msg, size_t size) {
   if (atomic_read(&(writePersistenceDevice.used_buf)) >= BUFFER_SIZE) {
     if (printk_ratelimit())
       printk(KERN_INFO "Write Persistence Buffer is full! Lost a value");
+    return;
   }
 
 //  writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf]->size = size;
