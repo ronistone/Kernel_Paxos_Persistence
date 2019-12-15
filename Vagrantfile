@@ -59,8 +59,8 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
    config.vm.provision "shell", inline: <<-SHELL
-     sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+     sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
      sudo yum -y group install "Development Tools"
-     sudo yum -y install nano wget gcc bzip2 make kernel-devel kernel-headers dkms gflags-devel glog-devel lmdb-devel
+     sudo yum -y install nano wget gcc bzip2 make kernel-devel kernel-headers dkms gflags-devel glog-devel lmdb-devel lmdb
    SHELL
 end

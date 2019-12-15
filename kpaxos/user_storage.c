@@ -18,7 +18,7 @@
 
 #define WHATEVER_VALUE 0
 #define LOG(isRead, fmt, args...)                                                \
-  isRead? printf("READ: " fmt "\n", ##args): printf("WRITE: " fmt "\n", ##args)
+  verbose? isRead? printf("READ: " fmt "\n", ##args): printf("WRITE: " fmt "\n", ##args): WHATEVER_VALUE
 
 static int stop = 0, verbose = 0;
 static int READ = 1;
@@ -235,15 +235,14 @@ static void process_read_message(struct lmdb_storage lmdbStorage, paxos_accepted
 static void* generic_storage_thread(void* param) {
   int isRead = *((int*)param);
   const char* device_path;
-  if(isRead){
+  if (isRead) {
     device_path = read_device_path;
   } else {
     device_path = write_device_path;
   }
 
-
   struct lmdb_storage lmdbStorage;
-  if(lmdb_storage_open( &lmdbStorage) != 0){
+  if (lmdb_storage_open( &lmdbStorage) != 0) {
     LOG(isRead, "Fail to open storage on write thread");
     pthread_exit(0);
     return NULL;
@@ -257,7 +256,7 @@ static void* generic_storage_thread(void* param) {
   recv = malloc(sizeof(paxos_accepted) + (sizeof(char) * MAX_PAXOS_VALUE_SIZE));
   accepted = malloc(sizeof(paxos_accepted) + (sizeof(char) * MAX_PAXOS_VALUE_SIZE));
 
-  LOG(isRead, "%s", device_path);
+  LOG(isRead, "Open Device -> %s", device_path);
   fd = open(device_path, O_RDWR | O_NONBLOCK, 0);
 
   if (fd > 0) {
@@ -269,9 +268,7 @@ static void* generic_storage_thread(void* param) {
       if (polling.revents & POLLIN) {
         len = read(fd, recv, WHATEVER_VALUE);
         buffer_to_paxos_accepted(recv, accepted);
-        if (verbose){
-          LOG(isRead, "Got this: %d  --> %s   -> %p", accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
-        }
+        LOG(isRead, "Got this: %d  --> %s   -> %p", accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
         if (len) {
           if(isRead){
             process_read_message(lmdbStorage, accepted, fd);

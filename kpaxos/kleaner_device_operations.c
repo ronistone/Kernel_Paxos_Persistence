@@ -37,7 +37,7 @@ ssize_t klearner_write(struct file *filep, const char *buffer, size_t len,
 //    for(i=0;i< len;i++)
 //      printk("%d", buffer[i]);
 //    printk("\n");
-    write_persistence_add_message(buffer, len);
+    write_persistence_add_message(buffer, len, NULL);
 
     return len;
 }

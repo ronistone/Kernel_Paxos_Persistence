@@ -6,6 +6,7 @@
 #include "kernel_client.h"
 #include "common.h"
 #include "paxos_types.h"
+#include "paxos.h"
 
 
 paxos_kernel_device writePersistenceDevice;
@@ -66,36 +67,55 @@ unsigned int write_persistence_poll(struct file *file, poll_table *wait) {
 }
 
 int write_persistence_release(struct inode *inodep, struct file *filep) {
-    mutex_unlock(&(writePersistenceDevice.char_mutex));
     // LOG_INFO("Messages left %d", atomic_read(&used_buf));
-    atomic_set(&(writePersistenceDevice.used_buf), 0);
-    writePersistenceDevice.current_buf = 0;
-    writePersistenceDevice.first_buf = 0;
-    printk(KERN_INFO "Write Persistence Device char: Device successfully closed");
+  atomic_set(&(writePersistenceDevice.used_buf), 0);
+  writePersistenceDevice.current_buf = 0;
+  writePersistenceDevice.first_buf = 0;
+  mutex_unlock(&(writePersistenceDevice.char_mutex));
+  printk(KERN_INFO "Write Persistence Device char: Device successfully closed");
     return 0;
 }
 
-void write_persistence_add_message(const char* msg, size_t size) {
+int write_persistence_add_message(const char* msg, size_t size, kernel_device_callback* callback) {
   if (atomic_read(&(writePersistenceDevice.used_buf)) >= BUFFER_SIZE) {
     if (printk_ratelimit())
-      printk(KERN_INFO "Write Persistence Buffer is full! Lost a value");
-    return;
+      printk(KERN_INFO "Read Persistence Buffer is full! Lost a value");
+    return -1;
+  }
+  atomic_inc(&(writePersistenceDevice.used_buf));
+
+  // BEGIN Save paxos accepted
+  memcpy(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf], msg, sizeof(paxos_accepted));
+
+  if(size > sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE){
+    printk(KERN_ERR "Data will be truncated.");
+    size = sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE;
+    writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf] -> value.paxos_value_len = MAX_PAXOS_VALUE_SIZE - sizeof(paxos_accepted);
   }
 
-//  writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf]->size = size;
-//  memcpy(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf]->value, msg, size);
-//  writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf]->size = size;
-  memcpy(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf], msg, size);
+  paxos_accepted* accepted = writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf];
+  if(accepted -> value.paxos_value_len > 0){
+    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
+    memcpy(accepted -> value.paxos_value_val, &msg[sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
+  }
+  // END Save paxos accepted
+  printk("paxos value %s\n", accepted -> value.paxos_value_val);
+
+  writePersistenceDevice.callback_buf[writePersistenceDevice.current_buf] = callback;
+
   writePersistenceDevice.current_buf = (writePersistenceDevice.current_buf + 1) % BUFFER_SIZE;
-  atomic_inc(&(writePersistenceDevice.used_buf));
+
   wake_up_interruptible(&(writePersistenceDevice.access_wait));
+  return 0;
 }
+
 
 paxos_kernel_device* createWritePersistenceDevice(void) {
 
     writePersistenceDevice.msg_buf = NULL;
     writePersistenceDevice.charClass = NULL;
     writePersistenceDevice.charDevice = NULL;
+    writePersistenceDevice.callback_buf = NULL;
 
     writePersistenceDevice.fops.owner = THIS_MODULE;
     writePersistenceDevice.fops.open = write_persistence_open;

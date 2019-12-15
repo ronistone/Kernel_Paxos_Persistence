@@ -7,7 +7,20 @@
 #include <linux/time.h>
 #include <linux/netdevice.h>
 
-#define BUFFER_SIZE 10000
+#define BUFFER_SIZE 100
+
+typedef struct kernel_device_message {
+  int buffer_id;
+  struct paxos_accepted* accepted;
+
+} kernel_device_message;
+
+typedef struct kernel_device_callback {
+
+  wait_queue_head_t* response_wait;
+  struct paxos_accepted* response;
+
+} kernel_device_callback;
 
 struct paxos_kernel_device {
     struct mutex char_mutex;
@@ -18,6 +31,7 @@ struct paxos_kernel_device {
     char *de_name, *clas_name;
     int majorNumber, working, current_buf, first_buf;
     struct paxos_accepted** msg_buf;
+    kernel_device_callback** callback_buf;
     atomic_t used_buf;
 
     struct file_operations fops;
