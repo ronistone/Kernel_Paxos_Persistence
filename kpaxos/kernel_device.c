@@ -1,6 +1,7 @@
 #include "kernel_device.h"
 #include "common.h"
 #include "kernel_client.h"
+#include "paxos.h"
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/kernel.h>
@@ -106,12 +107,11 @@ int kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device) {
     return -1;
 
   kernel_device -> msg_buf = vmalloc(sizeof(struct paxos_accepted*) * BUFFER_SIZE);
+  kernel_device -> callback_buf = vmalloc(sizeof(struct kernel_device_callback*) * BUFFER_SIZE);
   for(size_t i = 0; i < BUFFER_SIZE;i++){
-    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct paxos_accepted));
+    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct paxos_accepted) + MAX_PAXOS_VALUE_SIZE);
+    kernel_device -> callback_buf[i] = vmalloc(sizeof(struct kernel_device_callback));
   }
-//  kernel_device -> msg_buf->size = MSG_LEN;
-//  strcpy(kernel_device -> msg_buf->value, "HI there! If you see this message, you've read "
-//                         "from a char device");
   kernel_device -> current_buf = 0;
   kernel_device -> first_buf = 0;
   mutex_init(& (kernel_device -> char_mutex));

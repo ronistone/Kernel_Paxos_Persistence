@@ -76,7 +76,7 @@ void* writeProcess() {
   }
 
   int i;
-  for(i=123;i<125;i++) {
+  for(i=0;i<10000;i++) {
     paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
     accepted->iid = i;
     accepted->value.paxos_value_len = MSG_LEN;
@@ -93,7 +93,7 @@ void* writeProcess() {
       close(fd);
       return NULL;
     }
-    sleep(1);
+//    sleep(1);
   }
 
 }

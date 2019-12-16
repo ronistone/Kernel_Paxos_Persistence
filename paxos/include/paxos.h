@@ -106,6 +106,7 @@ extern "C"
     This number MUST be a power of 10.
 */
 #define MAX_N_OF_PROPOSERS 10
+#define MAX_PAXOS_VALUE_SIZE 200
 
 #ifdef __cplusplus
 }

@@ -6,6 +6,7 @@
 #include "kernel_client.h"
 #include "common.h"
 #include "paxos_types.h"
+#include "paxos.h"
 
 
 paxos_kernel_device readPersistenceDevice_;
@@ -23,20 +24,21 @@ int read_persistence_open(struct inode *inodep, struct file *filep) {
 // returns 0 if it has to stop, >0 when it reads something, and <0 on error
 ssize_t read_persistence_read(struct file *filep, char *buffer, size_t len,
                                loff_t *offset) {
-  int error_count;
+  int error_count_accepted, error_count_buffer_id;
   size_t llen;
 
   if (!readPersistenceDevice_.working)
     return 0;
 
-//    llen = (readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]->size);
-  llen = sizeof(paxos_accepted);
-  error_count = copy_to_user(buffer, (char *)(readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]), llen);
-  atomic_dec(&(readPersistenceDevice_.used_buf));
+  llen = sizeof(paxos_accepted) + readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]->value.paxos_value_len;
+//  error_count_buffer_id = copy_to_user(buffer, (char *)(readPersistenceDevice_.first_buf), sizeof(int));
+  error_count_accepted = copy_to_user(&buffer[sizeof(int)], (char *)(readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]), llen);
+  llen += sizeof(readPersistenceDevice_.first_buf);
+
 
   LOG_INFO("Read Persistence Device char: read %zu bytes!", llen);
 
-  if (error_count != 0) {
+  if (error_count_accepted != 0 || error_count_buffer_id != 0) {
     paxerr("send fewer characters to the user");
     return -1;
   } else {
@@ -76,19 +78,36 @@ int read_persistence_release(struct inode *inodep, struct file *filep) {
   return 0;
 }
 
-void read_persistence_add_message(const char* msg, size_t size) {
+int read_persistence_add_message(const char* msg, size_t size, kernel_device_callback* callback) {
   if (atomic_read(&(readPersistenceDevice_.used_buf)) >= BUFFER_SIZE) {
     if (printk_ratelimit())
       printk(KERN_INFO "Read Persistence Buffer is full! Lost a value");
+    return -1;
+  }
+  atomic_inc(&(readPersistenceDevice_.used_buf));
+
+  // BEGIN Save paxos accepted
+  memcpy(readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf], msg, sizeof(paxos_accepted));
+
+  if(size > sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE){
+    printk(KERN_ERR "Data will be truncated.");
+    size = sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE;
+    readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf] -> value.paxos_value_len = MAX_PAXOS_VALUE_SIZE - sizeof(paxos_accepted);
   }
 
-//  readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf]->size = size;
-//  memcpy(readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf]->value, msg, size);
-//  readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf]->size = size;
-  memcpy(readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf], msg, size);
+  paxos_accepted* accepted = readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf];
+  if(accepted -> value.paxos_value_len > 0){
+    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
+    memcpy(accepted -> value.paxos_value_val, &msg[sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
+  }
+  // END Save paxos accepted
+
+  readPersistenceDevice_.callback_buf[readPersistenceDevice_.current_buf] = callback;
+
   readPersistenceDevice_.current_buf = (readPersistenceDevice_.current_buf + 1) % BUFFER_SIZE;
-  atomic_inc(&(readPersistenceDevice_.used_buf));
+
   wake_up_interruptible(&(readPersistenceDevice_.access_wait));
+  return 0;
 }
 
 
@@ -97,6 +116,7 @@ paxos_kernel_device* createReadPersistenceDevice(void) {
   readPersistenceDevice_.msg_buf = NULL;
   readPersistenceDevice_.charClass = NULL;
   readPersistenceDevice_.charDevice = NULL;
+  readPersistenceDevice_.callback_buf = NULL;
 
   readPersistenceDevice_.fops.owner = THIS_MODULE;
   readPersistenceDevice_.fops.open = read_persistence_open;
