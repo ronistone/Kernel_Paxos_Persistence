@@ -9,8 +9,7 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
-
-#define BUFFER_SIZE 100000
+#include "paxos_types.h"
 
 static int majorNumber = 0;
 
@@ -43,8 +42,9 @@ static void allocate_name_folder(char **dest, char *name, int id) {
 
 static int major_number(int id, char *name, paxos_kernel_device* kernelDevice) {
   allocate_name_folder(&(kernelDevice -> de_name), name, id);
-  majorNumber = register_chrdev(majorNumber, kernelDevice -> de_name, &(kernelDevice -> fops));
-  kernelDevice -> majorNumber = majorNumber;
+  majorNumber = register_chrdev(0, kernelDevice->de_name,
+                                &(kernelDevice->fops));
+  kernelDevice->majorNumber = majorNumber;
   if (majorNumber < 0) {
     paxerr("register major number");
     return kernelDevice -> majorNumber;
@@ -73,7 +73,7 @@ static int reg_char_class(paxos_kernel_device* kernelDevice) {
       device_create(
           kernelDevice -> charClass,
           NULL,
-          MKDEV( kernelDevice -> majorNumber, kernelDevice -> minorNumber),
+          MKDEV( kernelDevice -> majorNumber, 0),
           NULL,
           kernelDevice -> de_name
       );
@@ -105,14 +105,18 @@ int kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device) {
   if (reg_char_class(kernel_device) < 0)
     return -1;
 
-  kernel_device -> msg_buf = vmalloc(sizeof(struct user_msg) + MSG_LEN);
-  kernel_device -> msg_buf->size = MSG_LEN;
-  strcpy(kernel_device -> msg_buf->value, "HI there! If you see this message, you've read "
-                         "from a char device");
-
+  kernel_device -> msg_buf = vmalloc(sizeof(struct paxos_accepted*) * BUFFER_SIZE);
+  for(size_t i = 0; i < BUFFER_SIZE;i++){
+    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct paxos_accepted));
+  }
+//  kernel_device -> msg_buf->size = MSG_LEN;
+//  strcpy(kernel_device -> msg_buf->value, "HI there! If you see this message, you've read "
+//                         "from a char device");
+  kernel_device -> current_buf = 0;
+  kernel_device -> first_buf = 0;
   mutex_init(& (kernel_device -> char_mutex));
   init_waitqueue_head(&(kernel_device -> access_wait));
-  atomic_set(&(kernel_device -> used_buf), 1);
+  atomic_set(&(kernel_device -> used_buf), 0);
   printk(KERN_INFO "Device class created correctly");
   return 0;
 }
@@ -122,12 +126,16 @@ void kdevchar_exit(paxos_kernel_device* kernel_device) {
   atomic_inc(&(kernel_device -> used_buf));
   wake_up_interruptible(&(kernel_device -> access_wait));
   mutex_destroy(&(kernel_device -> char_mutex));
-  device_destroy(kernel_device -> charClass, MKDEV(kernel_device -> majorNumber, kernel_device -> minorNumber)); // remove the device
+  device_destroy(kernel_device -> charClass, MKDEV(kernel_device -> majorNumber, 0)); // remove the device
   class_unregister(kernel_device -> charClass); // unregister the device class
   class_destroy(kernel_device -> charClass);    // remove the device class
 
-  if (kernel_device -> msg_buf)
-    vfree(kernel_device -> msg_buf);
+  if (kernel_device -> msg_buf) {
+    for(int i=0;i<BUFFER_SIZE;i++){
+      vfree(kernel_device->msg_buf[i]);
+    }
+    vfree(kernel_device->msg_buf);
+  }
 
   pfree(kernel_device -> de_name);
   pfree(kernel_device -> clas_name);
