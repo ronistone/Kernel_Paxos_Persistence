@@ -18,6 +18,8 @@ buffer_to_paxos_accepted(char* buffer, paxos_accepted* out)
     memcpy(out->value.paxos_value_val,
            &buffer[sizeof(paxos_accepted)],
            out->value.paxos_value_len);
+  } else {
+    out -> value.paxos_value_val = NULL;
   }
 }
 

@@ -31,9 +31,9 @@ ssize_t read_persistence_read(struct file *filep, char *buffer, size_t len,
     return 0;
 
   llen = sizeof(paxos_accepted) + readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]->value.paxos_value_len;
-//  error_count_buffer_id = copy_to_user(buffer, (char *)(readPersistenceDevice_.first_buf), sizeof(int));
+  error_count_buffer_id = copy_to_user(buffer, (char *)(&readPersistenceDevice_.first_buf), sizeof(int));
   error_count_accepted = copy_to_user(&buffer[sizeof(int)], (char *)(readPersistenceDevice_.msg_buf[readPersistenceDevice_.first_buf]), llen);
-  llen += sizeof(readPersistenceDevice_.first_buf);
+  llen += sizeof(int);
 
 
   LOG_INFO("Read Persistence Device char: read %zu bytes!", llen);
@@ -44,11 +44,6 @@ ssize_t read_persistence_read(struct file *filep, char *buffer, size_t len,
   } else {
     readPersistenceDevice_.first_buf = (readPersistenceDevice_.first_buf + 1) % BUFFER_SIZE;
   }
-  int i;
-  printk("Reading message bytes=[%zu]  ---> ", llen);
-  for(i=0;i< llen;i++)
-    printk("%d", buffer[i]);
-  printk("\n");
   return llen;
 }
 
@@ -56,6 +51,31 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
                                 loff_t *offset) {
   if (readPersistenceDevice_.working == 0)
     return -1;
+
+  int error_count_accepted, error_count_buffer_id, error_count_value = 0;
+  kernel_device_message* message = vmalloc(sizeof(kernel_device_message));
+  paxos_accepted* accepted = vmalloc(sizeof(paxos_accepted));
+
+  error_count_buffer_id = copy_from_user(message, buffer, sizeof(int));
+  error_count_accepted  = copy_from_user(accepted, &buffer[sizeof(int)], sizeof(paxos_accepted));
+
+  if (error_count_accepted != 0 || error_count_buffer_id != 0) {
+    paxerr("receive fewer characters from the user");
+    return -1;
+  }
+
+  if(accepted -> value.paxos_value_len > 0) {
+    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
+    error_count_value = copy_from_user(accepted -> value.paxos_value_val, &buffer[sizeof(int) + sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
+  }
+
+  if(error_count_value != 0){
+    paxerr("receive fewer paxos value characters from the user");
+    return -1;
+  }
+
+  readPersistenceDevice_.callback_buf[message -> buffer_id] -> response = &accepted;
+  wake_up_interruptible(readPersistenceDevice_.callback_buf[message -> buffer_id] -> response_wait);
 
   return len;
 }
@@ -70,7 +90,6 @@ unsigned int read_persistence_poll(struct file *file, poll_table *wait) {
 
 int read_persistence_release(struct inode *inodep, struct file *filep) {
   mutex_unlock(&(readPersistenceDevice_.char_mutex));
-  // LOG_INFO("Messages left %d", atomic_read(&used_buf));
   atomic_set(&(readPersistenceDevice_.used_buf), 0);
   readPersistenceDevice_.current_buf = 0;
   readPersistenceDevice_.first_buf = 0;
