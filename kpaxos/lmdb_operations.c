@@ -37,6 +37,21 @@ paxos_accepted_to_buffer(paxos_accepted* acc)
   return buffer;
 }
 
+char*
+client_value_to_buffer(client_value* client)
+{
+  size_t accepted_len = client -> value -> value.paxos_value_len + sizeof(paxos_accepted);
+  char* buffer = malloc(sizeof(client_value) + accepted_len);
+  if(buffer == NULL)
+    return NULL;
+  char* accepted = paxos_accepted_to_buffer(client -> value);
+  memcpy(buffer, &client -> bufferId, sizeof(int));
+  if(accepted != NULL) {
+    memcpy(&buffer[sizeof(int)], accepted, accepted_len);
+  }
+
+  return buffer;
+}
 static int
 lmdb_compare_iid(const MDB_val* lhs, const MDB_val* rhs)
 {

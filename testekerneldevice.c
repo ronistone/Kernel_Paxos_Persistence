@@ -19,55 +19,55 @@ static char receive[BUFFER_LENGTH];
   "********CCCCCCCCLLLLLLLLIIIIIIIIEEEEEEEENNNNNNNNTTTTTTTT*******"
 
 
-void* readProcess(){
-  int fd, ret;
-  int readDevice = open("/dev/paxos/test_persistence_write", O_RDWR);
-
-  if(fd < 0) {
-    perror("Failed to open the read char device");
-    return NULL;
-  }
-
-  printf("Reading from device\n");
-  while(1) {
-    ret = read(fd, receive, BUFFER_LENGTH);
-
-    if(ret < 0 ) {
-      perror("Failed to read message from the char device");
-      printf("End of the program\n");
-      return NULL;
-    }
-    receive[ret] = '\0';
-    printf("The received message is: [%s]\n", receive);
-  }
-
-}
-
 static char*
 paxos_accepted_to_buffer(paxos_accepted* acc)
 {
-  size_t len = acc->value.paxos_value_len;
-  char* buffer = malloc(sizeof(paxos_accepted) + len);
-//  char* buffer = malloc(sizeof(paxos_accepted));
-  memset(buffer, 0, sizeof(paxos_accepted));
-  if (buffer == NULL) {
-    printf("Fudeu!\n");
-    return NULL;
-  }
-  memcpy(buffer, acc, sizeof(paxos_accepted));
-  if (len > 0) {
-    memcpy(&buffer[sizeof(paxos_accepted)], acc->value.paxos_value_val, len);
-  }
+    size_t len = acc->value.paxos_value_len;
+    char* buffer = malloc(sizeof(paxos_accepted) + len);
+    if (buffer == NULL) {
+        printf("FUDEU!");
+      return NULL;
+    }
+    memcpy(buffer, acc, sizeof(paxos_accepted));
+    if (len > 0) {
+        memcpy(&buffer[sizeof(paxos_accepted)], acc->value.paxos_value_val, len);
+    }
+    return buffer;
+}
 
-  printf("%d\n", acc->iid);
-  int i;
-  for(i=0;i< sizeof(paxos_accepted);i++)
-    printf("%d", buffer[i]);
-  return buffer;
+void* readProcess(){
+    int readDevice = open("/dev/paxos/read-test1", O_WRONLY);
+    int fd, ret;
+    char *stringToSend;
+    if(readDevice < 0) {
+        perror("Failed to open the write char device");
+        return NULL;
+    }
+
+    unsigned int i;
+    for(i=1;i<100000;i++) {
+        paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
+        memset(accepted, 0, sizeof(paxos_accepted));
+        accepted->iid = i;
+        stringToSend = paxos_accepted_to_buffer(accepted);
+
+        printf("Writing message to the device bytes=[%zu]: %s.\n", sizeof(paxos_accepted), stringToSend);
+
+        ret = write(readDevice, stringToSend, sizeof(paxos_accepted) + accepted->value.paxos_value_len);
+
+        free(accepted);
+        free(stringToSend);
+        if (ret < 0) {
+            perror("Failed to write message the char device");
+            close(fd);
+            return NULL;
+        }
+    }
+
 }
 
 void* writeProcess() {
-  int readDevice = open("/dev/paxos/persistence0", O_WRONLY);
+  int readDevice = open("/dev/paxos/write-test0", O_WRONLY);
   int fd, ret;
   char *stringToSend;
   if(readDevice < 0) {
@@ -106,11 +106,11 @@ int main() {
 
   printf("Starting device test code\n");
 
-//  pthread_create(&readThread, NULL, readProcess, NULL);
-  pthread_create(&writeThread, NULL, writeProcess, NULL);
+  pthread_create(&readThread, NULL, readProcess, NULL);
+//  pthread_create(&writeThread, NULL, writeProcess, NULL);
 
-//  pthread_join(readThread, NULL);
-  pthread_join(writeThread, NULL);
+  pthread_join(readThread, NULL);
+//  pthread_join(writeThread, NULL);
 
   return 0;
 }

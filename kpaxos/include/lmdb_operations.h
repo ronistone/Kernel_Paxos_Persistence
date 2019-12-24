@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include "paxos.h"
 #include "paxos_types.h"
+#include "kernel_client.h"
 
 #include <lmdb.h>
 
@@ -34,6 +35,7 @@ extern int      lmdb_storage_get(struct lmdb_storage *handle, iid_t iid, paxos_a
 
 extern void     buffer_to_paxos_accepted(char* buffer, paxos_accepted* out);
 extern char*    paxos_accepted_to_buffer(paxos_accepted* acc);
+extern char*    client_value_to_buffer(client_value* client);
 
 
 #endif //KERNEL_PAXOS_PERSISTENCE_LMDB_OPERATIONS_H

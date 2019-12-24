@@ -4,7 +4,8 @@ obj-m+= \
 persistence-y:= \
 	kpaxos/write_persistence_device_operations.o \
 	kpaxos/read_persistence_device_operations.o \
-	kpaxos/kleaner_device_operations.o \
+	kpaxos/write_test_device_operations.o \
+	kpaxos/read_test_device_operations.o \
 	kpaxos/kernel_device.o \
 	persistence_main.o \
 

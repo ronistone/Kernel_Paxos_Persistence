@@ -24,7 +24,7 @@ int write_persistence_open(struct inode *inodep, struct file *filep) {
 // returns 0 if it has to stop, >0 when it reads something, and <0 on error
 ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
                       loff_t *offset) {
-    int error_count, error_count_value = 0;
+    int error_count, error_count_value = 0, error_count_buffer_id;
     size_t llen;
 
     if (!writePersistenceDevice.working)
@@ -32,13 +32,14 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
 
     paxos_accepted* accepted = writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf];
     llen = sizeof(paxos_accepted) + accepted->value.paxos_value_len;
-    error_count = copy_to_user(buffer, (char *)(accepted), sizeof(paxos_accepted));
+    error_count_buffer_id = copy_to_user(buffer, &writePersistenceDevice.first_buf, sizeof(int));
+    error_count = copy_to_user(&buffer[sizeof(int)], (char *)(accepted), sizeof(paxos_accepted));
     if(accepted->value.paxos_value_len > 0) {
       error_count_value = copy_to_user(&buffer[sizeof(paxos_accepted)], (char *)(accepted->value.paxos_value_val),accepted -> value.paxos_value_len);
     }
     atomic_dec(&(writePersistenceDevice.used_buf));
 
-    if (error_count != 0 || error_count_value != 0) {
+    if (error_count != 0 || error_count_value != 0 || error_count_buffer_id != 0 ) {
         paxerr("send fewer characters to the user");
         return -1;
     } else {
