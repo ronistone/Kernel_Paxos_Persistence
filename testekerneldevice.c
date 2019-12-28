@@ -8,6 +8,7 @@
 #include<fcntl.h>
 #include<string.h>
 #include "paxos_types.h"
+#include <unistd.h>
 
 #include <pthread.h>
 
@@ -18,6 +19,8 @@ static char receive[BUFFER_LENGTH];
 #define CLIENT_MSG                                                             \
   "********CCCCCCCCLLLLLLLLIIIIIIIIEEEEEEEENNNNNNNNTTTTTTTT*******"
 
+struct timeval tv;
+int readMessages = 100;
 
 static char*
 paxos_accepted_to_buffer(paxos_accepted* acc)
@@ -35,6 +38,21 @@ paxos_accepted_to_buffer(paxos_accepted* acc)
     return buffer;
 }
 
+static void calculateThroughput(){
+  struct timeval now;
+  double us;
+
+  gettimeofday(&now, NULL);
+  us = (now.tv_sec - tv.tv_sec) * 1000000;
+  if (us < 0)
+    us = 0;
+
+  us += (now.tv_usec - tv.tv_usec);
+  fflush(stdout);
+  fprintf(stderr, "\n\n%.2lf msgs sent and received per second\n",
+          ((float)readMessages * 1000000 / us));
+}
+
 void* readProcess(){
     int readDevice = open("/dev/paxos/read-test1", O_WRONLY);
     int fd, ret;
@@ -45,7 +63,8 @@ void* readProcess(){
     }
 
     unsigned int i;
-    for(i=1;i<100000;i++) {
+    gettimeofday(&tv, NULL);
+    for(i=1;i < readMessages;i++) {
         paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
         memset(accepted, 0, sizeof(paxos_accepted));
         accepted->iid = i;
@@ -64,6 +83,7 @@ void* readProcess(){
         }
     }
 
+    calculateThroughput();
 }
 
 void* writeProcess() {

@@ -62,5 +62,6 @@ Vagrant.configure(2) do |config|
      sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
      sudo yum -y group install "Development Tools"
      sudo yum -y install nano wget gcc bzip2 make kernel-devel kernel-headers dkms gflags-devel glog-devel lmdb-devel lmdb
+     sudo sh -c 'mkdir /var/crash || echo -e "\n\nkernel.core_pattern = /var/crash/core.%t.%p\nkernel.panic=10\nkernel.unknown_nmi_panic=1" >> /etc/sysctl.conf '
    SHELL
 end

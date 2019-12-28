@@ -41,10 +41,10 @@ ssize_t read_persistence_read(struct file *filep, char *buffer, size_t len,
   if (error_count_accepted != 0 || error_count_buffer_id != 0) {
     paxerr("send fewer characters to the user");
     return -1;
-  } else {
+  }/* else {
     readPersistenceDevice_.first_buf = (readPersistenceDevice_.first_buf + 1) % BUFFER_SIZE;
     atomic_dec(&(readPersistenceDevice_.used_buf));
-  }
+  }*/
   return llen;
 }
 
@@ -53,30 +53,30 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
   if (readPersistenceDevice_.working == 0)
     return -1;
 
-//  int error_count_accepted, error_count_buffer_id, error_count_value = 0;
+  int error_count_accepted, error_count_buffer_id, error_count_value = 0;
 //  kernel_device_message* message = vmalloc(sizeof(kernel_device_message));
-//  paxos_accepted* accepted = vmalloc(sizeof(paxos_accepted));
-//
-//  error_count_buffer_id = copy_from_user(message, buffer, sizeof(int));
-//  error_count_accepted  = copy_from_user(accepted, &buffer[sizeof(int)], sizeof(paxos_accepted));
-//
-//  if (error_count_accepted != 0 || error_count_buffer_id != 0) {
-//    paxerr("receive fewer characters from the user");
-//    return -1;
-//  }
-//
-//  if(accepted -> value.paxos_value_len > 0) {
-//    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
-//    error_count_value = copy_from_user(accepted -> value.paxos_value_val, &buffer[sizeof(int) + sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
-//  }
-//
-//  if(error_count_value != 0){
-//    paxerr("receive fewer paxos value characters from the user");
-//    return -1;
-//  }
-//
-//  readPersistenceDevice_.callback_buf[message -> buffer_id] -> response = &accepted;
-//  wake_up_interruptible(readPersistenceDevice_.callback_buf[message -> buffer_id] -> response_wait);
+  int buffer_id;
+  paxos_accepted* accepted = vmalloc(sizeof(paxos_accepted));
+
+  error_count_buffer_id = copy_from_user(&buffer_id, buffer, sizeof(int));
+  error_count_accepted  = copy_from_user(accepted, &buffer[sizeof(int)], sizeof(paxos_accepted));
+
+  if(accepted -> value.paxos_value_len > 0) {
+    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
+    error_count_value = copy_from_user(accepted -> value.paxos_value_val, &buffer[sizeof(int) + sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
+  }
+
+  readPersistenceDevice_.first_buf = (readPersistenceDevice_.first_buf + 1) % BUFFER_SIZE;
+  atomic_dec(&(readPersistenceDevice_.used_buf));
+
+  if (error_count_accepted != 0 || error_count_buffer_id != 0 || error_count_value != 0) {
+    paxerr("receive fewer characters from the user");
+    return -1;
+  }
+
+  printk("Received response from: [%d] -> %d\n", buffer_id, accepted -> iid);
+  readPersistenceDevice_.callback_buf[buffer_id] -> response = accepted;
+  wake_up_all(&(readPersistenceDevice_.callback_buf[buffer_id] -> response_wait));
 
   return len;
 }
@@ -111,9 +111,11 @@ int read_persistence_add_message(const char* msg, size_t size, kernel_device_cal
   memcpy(readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf], msg, size);
 
   // END Save paxos accepted
+  callback -> response = vmalloc(sizeof(paxos_accepted));
 
   readPersistenceDevice_.callback_buf[readPersistenceDevice_.current_buf] = callback;
 
+  printk("Added %d message\n", readPersistenceDevice_.current_buf);
   readPersistenceDevice_.current_buf = (readPersistenceDevice_.current_buf + 1) % BUFFER_SIZE;
 
   wake_up_interruptible(&(readPersistenceDevice_.access_wait));

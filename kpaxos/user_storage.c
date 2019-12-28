@@ -117,15 +117,15 @@ static void process_read_message(struct lmdb_storage lmdbStorage, client_value* 
   out_message.value = out;
   if(out != NULL) {
     LOG(READ, "found %d, sending to LKM\n", out -> iid);
-//    char* msg = client_value_to_buffer(&out_message);
-//    write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
+    char* msg = client_value_to_buffer(&out_message);
+    write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
   } else {
     LOG(READ, "not found %d, sending not found to LKM\n", message -> value -> iid);
-//    out = malloc(sizeof(paxos_accepted));
-//    memset(out, 0, sizeof(paxos_accepted));
-//    out_message.value = out;
-//    char* msg = client_value_to_buffer(&out_message);
-//    write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
+    out = malloc(sizeof(paxos_accepted));
+    memset(out, 0, sizeof(paxos_accepted));
+    out_message.value = out;
+    char* msg = client_value_to_buffer(&out_message);
+    write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
   }
 
 }

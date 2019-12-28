@@ -17,8 +17,8 @@ typedef struct kernel_device_message {
 
 typedef struct kernel_device_callback {
 
-  wait_queue_head_t* response_wait;
-  struct paxos_accepted** response;
+  wait_queue_head_t response_wait;
+  struct paxos_accepted* response;
 
 } kernel_device_callback;
 
