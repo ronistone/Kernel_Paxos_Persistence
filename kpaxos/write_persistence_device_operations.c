@@ -9,7 +9,7 @@
 #include "paxos.h"
 
 
-paxos_kernel_device writePersistenceDevice;
+static paxos_kernel_device writePersistenceDevice;
 
 
 int write_persistence_open(struct inode *inodep, struct file *filep) {

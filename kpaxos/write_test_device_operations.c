@@ -7,7 +7,7 @@
 #include "write_test_device_operations.h"
 #include "write_persistence_device_operations.h"
 
-paxos_kernel_device writeTestDevice;
+static paxos_kernel_device writeTestDevice;
 
 
 int write_test_open(struct inode *inodep, struct file *filep) {

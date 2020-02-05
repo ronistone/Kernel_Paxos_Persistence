@@ -7,17 +7,20 @@
 #include "read_test_device_operations.h"
 #include "read_persistence_device_operations.h"
 #include <linux/wait.h>
+#include <linux/kthread.h>
 
-paxos_kernel_device readTestDevice;
-long messagesReceived = 0, messagesFound = 0;
+static paxos_kernel_device readTestDevice;
+static struct task_struct **responseThread;
+static int messagesReceived = 0, messagesFound = 0, current_thread = 0;
+static int N_THREADS = 100;
 
 int read_test_open(struct inode *inodep, struct file *filep) {
-    messagesFound = messagesReceived = 0;
     LOG_DEBUG( "Mutex Address %p", &(readTestDevice.char_mutex));
     if (!mutex_trylock(&(readTestDevice.char_mutex))) {
         printk(KERN_ALERT "Device char: Device used by another process");
         return -EBUSY;
     }
+    messagesFound = messagesReceived = 0;
     return 0;
 }
 
@@ -30,6 +33,23 @@ ssize_t read_test_read(struct file *filep, char *buffer, size_t len,
   return len;
 }
 
+int wait_response(void* param){
+  kernel_device_callback* callback = (kernel_device_callback*)param;
+  printk("Enter in block!\n");
+  wait_event_timeout(callback -> response_wait, callback -> response == NULL, 2000);
+//  wait_event(callback -> response_wait, callback -> response == NULL);
+  printk("End the block!\n");
+  if(callback != NULL && callback -> response != NULL && callback -> response -> value.paxos_value_len > 0) {
+    printk("Paxos_accepted [%d] -> {%d} = %s\n", callback -> response->iid,
+           callback -> response->value.paxos_value_len, callback -> response -> value.paxos_value_val);
+    messagesFound++;
+  } else {
+    printk("Paxos_accepted [%d] -> no Message\n", callback -> response->iid);
+  }
+  do_exit(0);
+  return 0;
+}
+
 ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
                    loff_t *offset) {
     if (readTestDevice.working == 0)
@@ -40,30 +60,30 @@ ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
 //        printk("%c", buffer[i]);
 //    }
 //    printk("\n");
-    kernel_device_callback callback;
-    init_waitqueue_head(&(callback.response_wait));
-    callback.response = NULL;
-    read_persistence_add_message(buffer, len, &callback);
-    printk("Enter in block!\n");
-    wait_event_timeout(callback.response_wait, callback.response == NULL, 1);
-//    wait_event(callback.response_wait, callback.response == NULL);
-    printk("End the block!\n");
-    if(callback.response -> value.paxos_value_len > 0) {
-      printk("Paxos_accepted [%d] -> {%d} = %s\n", callback.response->iid,
-             callback.response->value.paxos_value_len, callback.response -> value.paxos_value_val);
-      messagesFound++;
-    } else {
-      printk("Paxos_accepted [%d] -> no Message\n", callback.response->iid);
+    kernel_device_callback* callback = vmalloc(sizeof(kernel_device_callback));
+    init_waitqueue_head(&(callback -> response_wait));
+    callback->response = NULL;
+    int error = read_persistence_add_message(buffer, len, callback);
+    if(error) {
+      printk("Buffer full!\n");
+      return len;
     }
+//    if(responseThread[current_thread] != NULL){
+//        kthread_stop(responseThread[current_thread]);
+//        responseThread[current_thread] = NULL;
+//    }
+    responseThread[current_thread] = kthread_run(wait_response, (void*) callback, "responseThread");
+    current_thread = (current_thread + 1) % N_THREADS;
+//    wait_response((void*) (&callback));
     messagesReceived++;
 
     return len;
 }
 
 unsigned int read_test_poll(struct file *file, poll_table *wait) {
-    poll_wait(file, &(readTestDevice.access_wait), wait);
-    if (atomic_read(&(readTestDevice.used_buf)) > 0)
-        return POLLIN;
+//    poll_wait(file, &(readTestDevice.access_wait), wait);
+//    if (atomic_read(&(readTestDevice.used_buf)) > 0)
+//        return POLLIN;
 
     return 0;
 }
@@ -71,10 +91,16 @@ unsigned int read_test_poll(struct file *file, poll_table *wait) {
 int read_test_release(struct inode *inodep, struct file *filep) {
     mutex_unlock(&(readTestDevice.char_mutex));
     // LOG_INFO("Messages left %d", atomic_read(&used_buf));
-    atomic_set(&(readTestDevice.used_buf), 1);
+//    atomic_set(&(readTestDevice.used_buf), 1);
+//    int i;
+//    for(i=0;i<N_THREADS;i++){
+//        if(responseThread[i] != NULL){
+//            kthread_stop(responseThread[i]);
+//        }
+//    }
     printk(KERN_INFO "\n\n===================================\n\n");
-    printk(KERN_INFO "Messages Received: %ld\n", messagesReceived);
-    printk(KERN_INFO "Messages Found on Persistence: %ld\n", messagesFound);
+    printk(KERN_INFO "Messages Received: %d\n", messagesReceived);
+    printk(KERN_INFO "Messages Found on Persistence: %d\n", messagesFound);
     printk(KERN_INFO "\n\n===================================\n\n");
     printk(KERN_INFO "Device Char: Device successfully closed");
     return 0;
@@ -92,6 +118,8 @@ paxos_kernel_device* createReadTestDevice(void) {
     readTestDevice.fops.write = read_test_write;
     readTestDevice.fops.release = read_test_release;
     readTestDevice.fops.poll = read_test_poll;
+
+    responseThread = vmalloc(sizeof(struct task_struct*) * N_THREADS);
 
     return &readTestDevice;
 }

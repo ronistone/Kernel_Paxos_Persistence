@@ -23,7 +23,7 @@ LMDBOP_OBJS := $(BUILD_DIR)/lmdb_operations.o
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
 EXTRALMDB_FLAG:= -llmdb
 EXTRASTORE_FLAG:= -lpthread
-DEBUG_FLAGS:= -ggdb
+DEBUG_FLAGS += -g -DDEBUG
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
 

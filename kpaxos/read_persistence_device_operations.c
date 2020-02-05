@@ -77,7 +77,6 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
   printk("Received response from: [%d] -> %d\n", buffer_id, accepted -> iid);
   readPersistenceDevice_.callback_buf[buffer_id] -> response = accepted;
   wake_up_all(&(readPersistenceDevice_.callback_buf[buffer_id] -> response_wait));
-
   return len;
 }
 
