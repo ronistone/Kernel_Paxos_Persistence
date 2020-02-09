@@ -54,7 +54,6 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
     return -1;
 
   int error_count_accepted, error_count_buffer_id, error_count_value = 0;
-//  kernel_device_message* message = vmalloc(sizeof(kernel_device_message));
   int buffer_id;
   paxos_accepted* accepted = vmalloc(sizeof(paxos_accepted));
 
@@ -76,7 +75,7 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
 
   printk("Received response from: [%d] -> %d\n", buffer_id, accepted -> iid);
   readPersistenceDevice_.callback_buf[buffer_id] -> response = accepted;
-  wake_up_all(&(readPersistenceDevice_.callback_buf[buffer_id] -> response_wait));
+  wake_up(&(readPersistenceDevice_.callback_buf[buffer_id] -> response_wait));
   return len;
 }
 
@@ -110,7 +109,6 @@ int read_persistence_add_message(const char* msg, size_t size, kernel_device_cal
   memcpy(readPersistenceDevice_.msg_buf[readPersistenceDevice_.current_buf], msg, size);
 
   // END Save paxos accepted
-  callback -> response = vmalloc(sizeof(paxos_accepted));
 
   readPersistenceDevice_.callback_buf[readPersistenceDevice_.current_buf] = callback;
 

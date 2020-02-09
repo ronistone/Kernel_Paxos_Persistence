@@ -31,14 +31,14 @@ static int __init paxos_persistence_init(void) {
   printk(KERN_INFO "PAXOS PERSISTENCE: Initializing paxos persistence");
   printk(KERN_INFO "");
 
-//  writeTestDevice = createWriteTestDevice();
-//  kdevchar_init(writeTestId, "write-test", writeTestDevice);
+  writeTestDevice = createWriteTestDevice();
+  kdevchar_init(writeTestId, "write-test", writeTestDevice);
 
   readTestDevice  = createReadTestDevice();
   kdevchar_init(readTestId, "read-test", readTestDevice);
 
-//  writePersistence = createWritePersistenceDevice();
-//  kdevchar_init(writePersistenceId, "write-persistence", writePersistence);
+  writePersistence = createWritePersistenceDevice();
+  kdevchar_init(writePersistenceId, "write-persistence", writePersistence);
 
   readPersistence = createReadPersistenceDevice();
   kdevchar_init(readPersistenceId, "read-persistence", readPersistence);
@@ -50,9 +50,9 @@ static int __init paxos_persistence_init(void) {
 }
 
 static void __exit paxos_persistence_exit(void) {
-//  kdevchar_exit(writeTestDevice);
+  kdevchar_exit(writeTestDevice);
   kdevchar_exit(readTestDevice);
-//  kdevchar_exit(writePersistence);
+  kdevchar_exit(writePersistence);
   kdevchar_exit(readPersistence);
   printk(KERN_INFO "PAXOS PERSISTENCE: goodbye");
   printk(KERN_INFO "");

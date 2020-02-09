@@ -36,8 +36,12 @@ ssize_t read_test_read(struct file *filep, char *buffer, size_t len,
 int wait_response(void* param){
   kernel_device_callback* callback = (kernel_device_callback*)param;
   printk("Enter in block!\n");
-  wait_event_timeout(callback -> response_wait, callback -> response == NULL, 2000);
-//  wait_event(callback -> response_wait, callback -> response == NULL);
+  int wait_response = wait_event_timeout(callback -> response_wait, callback -> response != NULL, 2000);
+  if(wait_response == 0){
+      printk("Wait Response: Timeout and condition is false\n");
+  } else  {
+      printk("Wait Response: Condition is true with reponse=%d\n", wait_response);
+  }
   printk("End the block!\n");
   if(callback != NULL && callback -> response != NULL && callback -> response -> value.paxos_value_len > 0) {
     printk("Paxos_accepted [%d] -> {%d} = %s\n", callback -> response->iid,
@@ -90,14 +94,7 @@ unsigned int read_test_poll(struct file *file, poll_table *wait) {
 
 int read_test_release(struct inode *inodep, struct file *filep) {
     mutex_unlock(&(readTestDevice.char_mutex));
-    // LOG_INFO("Messages left %d", atomic_read(&used_buf));
-//    atomic_set(&(readTestDevice.used_buf), 1);
-//    int i;
-//    for(i=0;i<N_THREADS;i++){
-//        if(responseThread[i] != NULL){
-//            kthread_stop(responseThread[i]);
-//        }
-//    }
+
     printk(KERN_INFO "\n\n===================================\n\n");
     printk(KERN_INFO "Messages Received: %d\n", messagesReceived);
     printk(KERN_INFO "Messages Found on Persistence: %d\n", messagesFound);
