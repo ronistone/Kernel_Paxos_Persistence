@@ -111,6 +111,7 @@ int read_persistence_add_message(const char* msg, size_t size, kernel_device_cal
   // END Save paxos accepted
 
   readPersistenceDevice_.callback_buf[readPersistenceDevice_.current_buf] = callback;
+  callback -> buffer_id = readPersistenceDevice_.current_buf;
 
   printk("Added %d message\n", readPersistenceDevice_.current_buf);
   readPersistenceDevice_.current_buf = (readPersistenceDevice_.current_buf + 1) % BUFFER_SIZE;

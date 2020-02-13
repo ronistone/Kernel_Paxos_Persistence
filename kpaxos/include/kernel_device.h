@@ -19,6 +19,7 @@ typedef struct kernel_device_callback {
 
   wait_queue_head_t response_wait;
   struct paxos_accepted* response;
+  int buffer_id;
 
 } kernel_device_callback;
 

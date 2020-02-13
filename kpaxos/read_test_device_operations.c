@@ -48,7 +48,7 @@ int wait_response(void* param){
            callback -> response->value.paxos_value_len, callback -> response -> value.paxos_value_val);
     messagesFound++;
   } else {
-    printk("Paxos_accepted [%d] -> no Message\n", callback -> response->iid);
+    printk("Paxos_accepted [%d] -> no Message\n", callback -> buffer_id );
   }
   do_exit(0);
   return 0;
@@ -72,13 +72,9 @@ ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
       printk("Buffer full!\n");
       return len;
     }
-//    if(responseThread[current_thread] != NULL){
-//        kthread_stop(responseThread[current_thread]);
-//        responseThread[current_thread] = NULL;
-//    }
+
     responseThread[current_thread] = kthread_run(wait_response, (void*) callback, "responseThread");
     current_thread = (current_thread + 1) % N_THREADS;
-//    wait_response((void*) (&callback));
     messagesReceived++;
 
     return len;
