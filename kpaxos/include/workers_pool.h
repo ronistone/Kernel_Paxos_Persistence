@@ -10,7 +10,8 @@
 
 typedef struct workers_pool {
 
-    struct kthread_worker** workers;
+    struct kthread_worker** worker;
+    struct task_struct **workerThread;
     int current_worker;
     int num_workers;
 
