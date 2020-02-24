@@ -73,7 +73,7 @@ ssize_t read_persistence_write(struct file *filep, const char *buffer, size_t le
     return -1;
   }
 
-  printk("Received response from: [%d] -> %d\n", buffer_id, accepted -> iid);
+//  printk("Received response from: [%d] -> %d\n", buffer_id, accepted -> iid);
   readPersistenceDevice_.callback_buf[buffer_id] -> response = accepted;
   wake_up(&(readPersistenceDevice_.callback_buf[buffer_id] -> response_wait));
   return len;
@@ -113,7 +113,7 @@ int read_persistence_add_message(const char* msg, size_t size, kernel_device_cal
   readPersistenceDevice_.callback_buf[readPersistenceDevice_.current_buf] = callback;
   callback -> buffer_id = readPersistenceDevice_.current_buf;
 
-  printk("Added %d message\n", readPersistenceDevice_.current_buf);
+//  printk("Added %d message\n", readPersistenceDevice_.current_buf);
   readPersistenceDevice_.current_buf = (readPersistenceDevice_.current_buf + 1) % BUFFER_SIZE;
 
   wake_up_interruptible(&(readPersistenceDevice_.access_wait));

@@ -6,12 +6,14 @@
 #define KERNEL_PAXOS_PERSISTENCE_WORKERS_POOL_H
 
 #include <linux/kthread.h>
+#include <linux/vmalloc.h>
 #include "kernel_device.h"
 
 typedef struct workers_pool {
 
     struct kthread_worker** worker;
     struct task_struct **workerThread;
+    struct task_struct* mainThread;
     int current_worker;
     int num_workers;
 
@@ -21,5 +23,8 @@ typedef struct persistence_work {
     struct kthread_work work;
     kernel_device_callback* param;
 } persistence_work;
+
+extern workers_pool* create_pool(int num_workers);
+extern void add_work(workers_pool* pool, persistence_work* work);
 
 #endif //KERNEL_PAXOS_PERSISTENCE_WORKERS_POOL_H

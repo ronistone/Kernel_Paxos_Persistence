@@ -6,16 +6,19 @@
 #include "common.h"
 #include "read_test_device_operations.h"
 #include "read_persistence_device_operations.h"
+#include "workers_pool.h"
 #include <linux/wait.h>
 #include <linux/kthread.h>
 
 static paxos_kernel_device readTestDevice;
-static struct task_struct **responseThread;
-static int messagesReceived = 0, messagesFound = 0, current_thread = 0;
+static workers_pool *pool;
+static int messagesReceived = 0, messagesFound = 0;
 static int N_THREADS = 100;
 
+static persistence_work* createPersistenceWork();
+
 int read_test_open(struct inode *inodep, struct file *filep) {
-    LOG_DEBUG( "Mutex Address %p", &(readTestDevice.char_mutex));
+    LOG_DEBUG("Mutex Address %p", &(readTestDevice.char_mutex));
     if (!mutex_trylock(&(readTestDevice.char_mutex))) {
         printk(KERN_ALERT "Device char: Device used by another process");
         return -EBUSY;
@@ -26,58 +29,71 @@ int read_test_open(struct inode *inodep, struct file *filep) {
 
 // returns 0 if it has to stop, >0 when it reads something, and <0 on error
 ssize_t read_test_read(struct file *filep, char *buffer, size_t len,
-                  loff_t *offset) {
-  if (readTestDevice.working == 0)
-    return -1;
+                       loff_t *offset) {
+    if (readTestDevice.working == 0)
+        return -1;
 
-  return len;
+    return len;
 }
 
-int wait_response(void* param){
-  kernel_device_callback* callback = (kernel_device_callback*)param;
-  printk("Enter in block!\n");
-  int wait_response = wait_event_timeout(callback -> response_wait, callback -> response != NULL, 2000);
-  if(wait_response == 0){
-      printk("Wait Response: Timeout and condition is false\n");
-  } else  {
-      printk("Wait Response: Condition is true with reponse=%d\n", wait_response);
-  }
-  printk("End the block!\n");
-  if(callback != NULL && callback -> response != NULL && callback -> response -> value.paxos_value_len > 0) {
-    printk("Paxos_accepted [%d] -> {%d} = %s\n", callback -> response->iid,
-           callback -> response->value.paxos_value_len, callback -> response -> value.paxos_value_val);
-    messagesFound++;
-  } else {
-    printk("Paxos_accepted [%d] -> no Message\n", callback -> buffer_id );
-  }
-  do_exit(0);
-  return 0;
+void wait_response(struct kthread_work *param) {
+    persistence_work* work = container_of(param, persistence_work, work);
+    kernel_device_callback *callback = work -> param;
+    char* threadName = param -> worker -> task -> comm;
+
+//    printk("[%s  ->  %ld] Enter in block!\n", threadName, param -> worker -> task -> state);
+    int wait_response = wait_event_timeout(callback->response_wait, callback->response != NULL, 10000);
+    if (wait_response == 0) {
+        printk("[%s  ->  %ld] Wait Response: Timeout and condition is false\n", threadName, param -> worker -> task -> state);
+    } else {
+        printk("[%s  ->  %ld] Wait Response: Condition is true with reponse=%d\n", threadName, param -> worker -> task -> state, wait_response);
+    }
+//    printk("[%s  ->  %ld] End the block!\n", threadName, param -> worker -> task -> state);
+    if (callback != NULL && callback->response != NULL && callback->response->value.paxos_value_len > 0) {
+//        printk("[%s  ->  %ld] Paxos_accepted [%d] -> {%d} = %s\n", threadName, param -> worker -> task -> state, callback->response->iid,
+//               callback->response->value.paxos_value_len, callback->response->value.paxos_value_val);
+        messagesFound++;
+    } else {
+//        printk("[%s  -> %ld] Paxos_accepted [%d] -> no Message\n", threadName, param -> worker -> task -> state, callback->buffer_id);
+    }
 }
 
 ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
-                   loff_t *offset) {
+                        loff_t *offset) {
     if (readTestDevice.working == 0)
         return -1;
-//    int i;
-//    printk("READ_TEST[ %zu ]: %d", len, ((paxos_accepted*)buffer)->iid );
-//    for(i=0;i<len;i++){
-//        printk("%c", buffer[i]);
-//    }
-//    printk("\n");
-    kernel_device_callback* callback = vmalloc(sizeof(kernel_device_callback));
-    init_waitqueue_head(&(callback -> response_wait));
-    callback->response = NULL;
-    int error = read_persistence_add_message(buffer, len, callback);
-    if(error) {
-      printk("Buffer full!\n");
-      return len;
+
+    persistence_work *persistenceWork = createPersistenceWork();
+
+    if(persistenceWork == NULL){
+        printk("ERROR to create persistence work\n");
+        return len;
+    }
+    int error = read_persistence_add_message(buffer, len, persistenceWork->param);
+    if (error) {
+        printk("Buffer full!\n");
+        return len;
     }
 
-    responseThread[current_thread] = kthread_run(wait_response, (void*) callback, "responseThread");
-    current_thread = (current_thread + 1) % N_THREADS;
+    add_work(pool, persistenceWork);
     messagesReceived++;
 
     return len;
+}
+
+static persistence_work* createPersistenceWork() {
+    kernel_device_callback *callback = vmalloc(sizeof(kernel_device_callback));
+    persistence_work *persistenceWork = vmalloc(sizeof(persistence_work));
+
+    if( callback != NULL && persistenceWork != NULL ) {
+        init_waitqueue_head(&(callback->response_wait));
+        callback->response = NULL;
+
+        persistenceWork->param = callback;
+        init_kthread_work(&(persistenceWork->work), wait_response);
+    }
+
+    return persistenceWork;
 }
 
 unsigned int read_test_poll(struct file *file, poll_table *wait) {
@@ -99,7 +115,7 @@ int read_test_release(struct inode *inodep, struct file *filep) {
     return 0;
 }
 
-paxos_kernel_device* createReadTestDevice(void) {
+paxos_kernel_device *createReadTestDevice(void) {
 
     readTestDevice.msg_buf = NULL;
     readTestDevice.charClass = NULL;
@@ -112,7 +128,10 @@ paxos_kernel_device* createReadTestDevice(void) {
     readTestDevice.fops.release = read_test_release;
     readTestDevice.fops.poll = read_test_poll;
 
-    responseThread = vmalloc(sizeof(struct task_struct*) * N_THREADS);
+    pool = create_pool(N_THREADS);
+    if (pool == NULL) {
+        printk("ERROR: Thread Pool was not created\n");
+    }
 
     return &readTestDevice;
 }
