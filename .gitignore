@@ -2,3 +2,6 @@
 .vscode/
 build/
 .vagrant/
+*.cmd
+.tmp_versions
+.cache.mk
