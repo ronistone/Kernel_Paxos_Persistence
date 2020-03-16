@@ -71,9 +71,15 @@ void* readProcess(){
         accepted->iid = i;
         stringToSend = paxos_accepted_to_buffer(accepted);
 
-        printf("Writing message to the device bytes=[%zu]: %s.\n", sizeof(paxos_accepted), stringToSend);
+        printf("Writing message to the device bytes=[%zu]: %s.\n",
+            sizeof(paxos_accepted),
+            stringToSend
+            );
 
-        ret = write(readDevice, stringToSend, sizeof(paxos_accepted) + accepted->value.paxos_value_len);
+        ret = write(readDevice,
+            stringToSend,
+            sizeof(paxos_accepted) + accepted->value.paxos_value_len
+            );
 
         free(accepted);
         free(stringToSend);
@@ -105,9 +111,14 @@ void* writeProcess() {
     strcpy(accepted->value.paxos_value_val, CLIENT_MSG);
     stringToSend = paxos_accepted_to_buffer(accepted);
 
-    printf("Writing message to the device bytes=[%zu].\n", sizeof(paxos_accepted));
+    printf("Writing message to the device bytes=[%zu].\n",
+        sizeof(paxos_accepted)
+        );
 
-    ret = write(readDevice, stringToSend, sizeof(paxos_accepted) + accepted->value.paxos_value_len);
+    ret = write(readDevice,
+        stringToSend,
+        sizeof(paxos_accepted) + accepted->value.paxos_value_len
+        );
 
     free(accepted);
     free(stringToSend);
