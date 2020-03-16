@@ -2,9 +2,12 @@ obj-m+= \
 	persistence.o
 
 persistence-y:= \
+    paxos/paxos.o \
+    kpaxos/workers_pool.o \
 	kpaxos/write_persistence_device_operations.o \
 	kpaxos/read_persistence_device_operations.o \
-	kpaxos/kleaner_device_operations.o \
+	kpaxos/write_test_device_operations.o \
+	kpaxos/read_test_device_operations.o \
 	kpaxos/kernel_device.o \
 	persistence_main.o \
 
@@ -22,7 +25,7 @@ LMDBOP_OBJS := $(BUILD_DIR)/lmdb_operations.o
 EXTRA_CFLAGS:= -I$(PWD)/kpaxos/include -I$(PWD)/paxos/include -I$(HOME)/local/include
 EXTRALMDB_FLAG:= -llmdb
 EXTRASTORE_FLAG:= -lpthread
-DEBUG_FLAGS:= -ggdb
+DEBUG_FLAGS += -g -DDEBUG
 ccflags-y:= $(G_COMP) -Wall -Wno-declaration-after-statement -Wframe-larger-than=3100 -O3
 
 

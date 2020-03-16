@@ -7,7 +7,7 @@
 #include <linux/time.h>
 #include <linux/netdevice.h>
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 1000
 
 typedef struct kernel_device_message {
   int buffer_id;
@@ -17,8 +17,11 @@ typedef struct kernel_device_message {
 
 typedef struct kernel_device_callback {
 
-  wait_queue_head_t* response_wait;
-  struct paxos_accepted** response;
+  wait_queue_head_t response_wait;
+  struct paxos_accepted* response;
+  int buffer_id;
+  uint32_t is_done;
+  uint32_t iid;
 
 } kernel_device_callback;
 

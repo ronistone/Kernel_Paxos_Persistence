@@ -1,0 +1,10 @@
+//
+// Created by roni on 13/09/19.
+//
+
+#ifndef KERNEL_PAXOS_PERSISTENCE_WRITE_TEST_DEVICE_OPERATIONS_H
+#define KERNEL_PAXOS_PERSISTENCE_WRITE_TEST_DEVICE_OPERATIONS_H
+
+extern paxos_kernel_device*  createWriteTestDevice(void);
+
+#endif //KERNEL_PAXOS_PERSISTENCE_WRITE_TEST_DEVICE_OPERATIONS_H

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="kernel"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kernel">
+				<Option output="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/kernel.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/include"/>
+					<Add directory="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/include"/>
+					<Add directory="/home/roni/Workspace/ufu/TCC/linux/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 kernel"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kernel/fast">
+				<Option output="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/kernel.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/include"/>
+					<Add directory="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/include"/>
+					<Add directory="/home/roni/Workspace/ufu/TCC/linux/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 kernel/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/build/persistence.mod.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/kernel_device.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/lmdb_operations.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/read_persistence_device_operations.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/read_test_device_operations.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/user_chardev.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/user_storage.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/workers_pool.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/write_persistence_device_operations.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/write_test_device_operations.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/persistence_main.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/testekerneldevice.c">
+			<Option target="kernel"/>
+		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

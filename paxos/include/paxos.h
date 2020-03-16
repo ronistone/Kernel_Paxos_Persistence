@@ -97,6 +97,7 @@ extern "C"
   void         paxos_log_error(const char* format, ...);
   void         paxos_log_info(const char* format, ...);
   void         paxos_log_debug(const char* format, ...);
+  void         clearPaxosAccepted(paxos_accepted* accepted);
 
 /*
     MAX_N_OF_PROPOSERS should be removed.
