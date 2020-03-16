@@ -39,10 +39,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/clion-2019.3.2/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /opt/clion-2019.3.4/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /opt/clion-2019.3.2/bin/cmake/linux/bin/cmake -E remove -f
+RM = /opt/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -59,7 +59,7 @@ CMAKE_BINARY_DIR = /home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-b
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/opt/clion-2019.3.2/bin/cmake/linux/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/clion-2019.3.4/bin/cmake/linux/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -70,7 +70,7 @@ rebuild_cache/fast: rebuild_cache
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/opt/clion-2019.3.2/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	/opt/clion-2019.3.4/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -393,6 +393,33 @@ kpaxos/write_test_device_operations.c.s:
 	$(MAKE) -f CMakeFiles/kernel.dir/build.make CMakeFiles/kernel.dir/kpaxos/write_test_device_operations.c.s
 .PHONY : kpaxos/write_test_device_operations.c.s
 
+paxos/paxos.o: paxos/paxos.c.o
+
+.PHONY : paxos/paxos.o
+
+# target to build an object file
+paxos/paxos.c.o:
+	$(MAKE) -f CMakeFiles/kernel.dir/build.make CMakeFiles/kernel.dir/paxos/paxos.c.o
+.PHONY : paxos/paxos.c.o
+
+paxos/paxos.i: paxos/paxos.c.i
+
+.PHONY : paxos/paxos.i
+
+# target to preprocess a source file
+paxos/paxos.c.i:
+	$(MAKE) -f CMakeFiles/kernel.dir/build.make CMakeFiles/kernel.dir/paxos/paxos.c.i
+.PHONY : paxos/paxos.c.i
+
+paxos/paxos.s: paxos/paxos.c.s
+
+.PHONY : paxos/paxos.s
+
+# target to generate assembly for a file
+paxos/paxos.c.s:
+	$(MAKE) -f CMakeFiles/kernel.dir/build.make CMakeFiles/kernel.dir/paxos/paxos.c.s
+.PHONY : paxos/paxos.c.s
+
 persistence_main.o: persistence_main.c.o
 
 .PHONY : persistence_main.o
@@ -486,6 +513,9 @@ help:
 	@echo "... kpaxos/write_test_device_operations.o"
 	@echo "... kpaxos/write_test_device_operations.i"
 	@echo "... kpaxos/write_test_device_operations.s"
+	@echo "... paxos/paxos.o"
+	@echo "... paxos/paxos.i"
+	@echo "... paxos/paxos.s"
 	@echo "... persistence_main.o"
 	@echo "... persistence_main.i"
 	@echo "... persistence_main.s"

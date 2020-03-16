@@ -14,6 +14,7 @@ set(CMAKE_DEPENDS_CHECK_C
   "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/workers_pool.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/kpaxos/workers_pool.c.o"
   "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/write_persistence_device_operations.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/kpaxos/write_persistence_device_operations.c.o"
   "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/write_test_device_operations.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/kpaxos/write_test_device_operations.c.o"
+  "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/paxos/paxos.c.o"
   "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/persistence_main.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/persistence_main.c.o"
   "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/testekerneldevice.c" "/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir/testekerneldevice.c.o"
   )

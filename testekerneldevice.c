@@ -20,7 +20,8 @@ static char receive[BUFFER_LENGTH];
   "********CCCCCCCCLLLLLLLLIIIIIIIIEEEEEEEENNNNNNNNTTTTTTTT*******"
 
 struct timeval tv;
-int readMessages = 10000;
+int readMessages = 1000000;
+int writeMessages = 100000;
 
 static char*
 paxos_accepted_to_buffer(paxos_accepted* acc)
@@ -96,7 +97,7 @@ void* writeProcess() {
   }
 
   int i;
-  for(i=0;i<10000;i++) {
+  for(i=0;i<writeMessages;i++) {
     paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
     accepted->iid = i;
     accepted->value.paxos_value_len = MSG_LEN;
@@ -108,6 +109,8 @@ void* writeProcess() {
 
     ret = write(readDevice, stringToSend, sizeof(paxos_accepted) + accepted->value.paxos_value_len);
 
+    free(accepted);
+    free(stringToSend);
     if (ret < 0) {
       perror("Failed to write message the char device");
       close(fd);

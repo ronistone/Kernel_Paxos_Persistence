@@ -9,6 +9,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/kernel.dir/kpaxos/workers_pool.c.o"
   "CMakeFiles/kernel.dir/kpaxos/write_persistence_device_operations.c.o"
   "CMakeFiles/kernel.dir/kpaxos/write_test_device_operations.c.o"
+  "CMakeFiles/kernel.dir/paxos/paxos.c.o"
   "CMakeFiles/kernel.dir/persistence_main.c.o"
   "CMakeFiles/kernel.dir/testekerneldevice.c.o"
 )

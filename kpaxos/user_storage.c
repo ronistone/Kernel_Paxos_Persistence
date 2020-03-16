@@ -26,7 +26,7 @@ static int WRITE = 0;
 static const char *read_device_path, *write_device_path;
 static pthread_t read_thread, write_thread;
 
-
+const char *get_device_path(int isRead);
 static void usage(const char *name) {
   printf("Usage: %s [options] \n", name);
   printf("Options:\n");
@@ -119,6 +119,7 @@ static void process_read_message(struct lmdb_storage lmdbStorage, client_value* 
     LOG(READ, "found %d, sending to LKM\n", out -> iid);
     char* msg = client_value_to_buffer(&out_message);
     write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
+    free(msg);
   } else {
     LOG(READ, "not found %d, sending not found to LKM\n", message -> value -> iid);
     out = malloc(sizeof(paxos_accepted));
@@ -126,26 +127,25 @@ static void process_read_message(struct lmdb_storage lmdbStorage, client_value* 
     out_message.value = out;
     char* msg = client_value_to_buffer(&out_message);
     write(fd, msg, sizeof(int) + sizeof(paxos_accepted) + out->value.paxos_value_len);
+    free(msg);
   }
-
+  if(out -> value.paxos_value_val != NULL){
+    free( out -> value.paxos_value_val );
+  }
+  free(out);
 }
 
 static void* generic_storage_thread(void* param) {
   int isRead = *((int*)param);
-  const char* device_path;
-  if (isRead) {
-    device_path = read_device_path;
-  } else {
-    device_path = write_device_path;
-  }
+  const char *device_path = get_device_path(isRead);
 
   struct lmdb_storage lmdbStorage;
-  if (lmdb_storage_open( &lmdbStorage) != 0) {
-    LOG(isRead, "Fail to open storage on write thread");
+  if (lmdb_storage_open( &lmdbStorage ) != 0) {
+    LOG(isRead, "Fail to open storage");
     pthread_exit(0);
     return NULL;
   }
-  int fd = 1, bufferId;
+  int fd, bufferId;
   struct pollfd polling;
   char *recv;
   paxos_accepted* accepted;
@@ -168,20 +168,23 @@ static void* generic_storage_thread(void* param) {
       if (polling.revents & POLLIN) {
 
         len = read(fd, recv, WHATEVER_VALUE);
-        memcpy(&bufferId, recv, sizeof(int));
-        buffer_to_paxos_accepted(&recv[sizeof(int)], accepted);
-        message = malloc(sizeof(client_value));
-        message -> bufferId = bufferId;
-        message -> value = accepted;
 
-        LOG(isRead, "Got this: bufferId[%d]: %d  --> %s   -> %p", bufferId, accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
         if (len) {
+
+          memcpy(&bufferId, recv, sizeof(int));
+          buffer_to_paxos_accepted(&recv[sizeof(int)], accepted);
+          message = malloc(sizeof(client_value));
+          message -> bufferId = bufferId;
+          message -> value = accepted;
+
+          LOG(isRead, "Got this: bufferId[%d]: %d  --> %s   -> %p", bufferId, accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
           countMessages++;
           if(isRead){
             process_read_message(lmdbStorage, message, fd);
           } else {
             process_write_message(lmdbStorage, message);
           }
+          free(message);
         }
       } else {
         LOG(isRead, "No read event");
@@ -196,8 +199,18 @@ static void* generic_storage_thread(void* param) {
     LOG(isRead, "Error while opening the write storage chardev.");
   }
   free(recv);
+  free(accepted);
 
   pthread_exit(0);
+}
+const char *get_device_path(int isRead) {
+  const char* device_path;
+  if (isRead) {
+    device_path = read_device_path;
+  } else {
+    device_path = write_device_path;
+  }
+  return device_path;
 }
 
 static void run(){

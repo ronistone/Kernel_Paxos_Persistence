@@ -11,6 +11,7 @@
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
 #include "paxos_types.h"
+#include "paxos.h"
 
 static int majorNumber = 0;
 
@@ -106,11 +107,23 @@ int kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device) {
   if (reg_char_class(kernel_device) < 0)
     return -1;
 
+  kernel_device_callback* callback;
+
   kernel_device -> msg_buf = vmalloc(sizeof(struct paxos_accepted*) * BUFFER_SIZE);
   kernel_device -> callback_buf = vmalloc(sizeof(struct kernel_device_callback*) * BUFFER_SIZE);
   for(size_t i = 0; i < BUFFER_SIZE;i++){
-    kernel_device -> msg_buf[i] = vmalloc(sizeof(struct paxos_accepted) + MAX_PAXOS_VALUE_SIZE);
+    kernel_device -> msg_buf[i] = pmalloc(sizeof(struct paxos_accepted) + MAX_PAXOS_VALUE_SIZE);
     kernel_device -> callback_buf[i] = vmalloc(sizeof(struct kernel_device_callback));
+
+    callback = kernel_device -> callback_buf[i];
+    init_waitqueue_head(&(callback->response_wait));
+
+    callback->response = vmalloc(sizeof(struct paxos_accepted));
+    callback->response->value.paxos_value_val = vmalloc(MAX_PAXOS_VALUE_SIZE);
+    clearPaxosAccepted(callback -> response);
+
+    callback->is_done = 0;
+
   }
   kernel_device -> current_buf = 0;
   kernel_device -> first_buf = 0;
@@ -130,11 +143,15 @@ void kdevchar_exit(paxos_kernel_device* kernel_device) {
   class_unregister(kernel_device -> charClass); // unregister the device class
   class_destroy(kernel_device -> charClass);    // remove the device class
 
-  if (kernel_device -> msg_buf) {
+  if (kernel_device -> msg_buf && kernel_device -> callback_buf) {
     for(int i=0;i<BUFFER_SIZE;i++){
-      vfree(kernel_device->msg_buf[i]);
+      kfree(kernel_device->msg_buf[i]);
+      vfree(kernel_device -> callback_buf[i] -> response -> value.paxos_value_val);
+      vfree(kernel_device -> callback_buf[i] -> response );
+      vfree(kernel_device->callback_buf[i]);
     }
     vfree(kernel_device->msg_buf);
+    vfree(kernel_device->callback_buf);
   }
 
   pfree(kernel_device -> de_name);

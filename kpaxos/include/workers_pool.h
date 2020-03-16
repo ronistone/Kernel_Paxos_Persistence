@@ -22,9 +22,10 @@ typedef struct workers_pool {
 typedef struct persistence_work {
     struct kthread_work work;
     kernel_device_callback* param;
+    uint32_t iid;
 } persistence_work;
 
 extern workers_pool* create_pool(int num_workers);
 extern void add_work(workers_pool* pool, persistence_work* work);
-
+extern void free_pool(workers_pool *pool);
 #endif //KERNEL_PAXOS_PERSISTENCE_WORKERS_POOL_H

@@ -48,7 +48,9 @@ client_value_to_buffer(client_value* client)
   memcpy(buffer, &client -> bufferId, sizeof(int));
   if(accepted != NULL) {
     memcpy(&buffer[sizeof(int)], accepted, accepted_len);
+    free(accepted);
   }
+
 
   return buffer;
 }

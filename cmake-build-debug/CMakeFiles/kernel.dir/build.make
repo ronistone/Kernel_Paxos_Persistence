@@ -34,10 +34,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/clion-2019.3.2/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /opt/clion-2019.3.4/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /opt/clion-2019.3.2/bin/cmake/linux/bin/cmake -E remove -f
+RM = /opt/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -213,6 +213,19 @@ CMakeFiles/kernel.dir/testekerneldevice.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/kernel.dir/testekerneldevice.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -I../paxos/include -I../kpaxos/include -S /home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/testekerneldevice.c -o CMakeFiles/kernel.dir/testekerneldevice.c.s
 
+CMakeFiles/kernel.dir/paxos/paxos.c.o: CMakeFiles/kernel.dir/flags.make
+CMakeFiles/kernel.dir/paxos/paxos.c.o: ../paxos/paxos.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/kernel.dir/paxos/paxos.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/kernel.dir/paxos/paxos.c.o   -c /home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c
+
+CMakeFiles/kernel.dir/paxos/paxos.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/kernel.dir/paxos/paxos.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c > CMakeFiles/kernel.dir/paxos/paxos.c.i
+
+CMakeFiles/kernel.dir/paxos/paxos.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/kernel.dir/paxos/paxos.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c -o CMakeFiles/kernel.dir/paxos/paxos.c.s
+
 kernel: CMakeFiles/kernel.dir/kpaxos/kernel_device.c.o
 kernel: CMakeFiles/kernel.dir/kpaxos/read_persistence_device_operations.c.o
 kernel: CMakeFiles/kernel.dir/kpaxos/write_test_device_operations.c.o
@@ -225,6 +238,7 @@ kernel: CMakeFiles/kernel.dir/kpaxos/write_persistence_device_operations.c.o
 kernel: CMakeFiles/kernel.dir/kpaxos/user_storage.c.o
 kernel: CMakeFiles/kernel.dir/kpaxos/read_test_device_operations.c.o
 kernel: CMakeFiles/kernel.dir/testekerneldevice.c.o
+kernel: CMakeFiles/kernel.dir/paxos/paxos.c.o
 kernel: CMakeFiles/kernel.dir/build.make
 
 .PHONY : kernel

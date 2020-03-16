@@ -120,6 +120,9 @@
 		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/kpaxos/write_test_device_operations.c">
 			<Option target="kernel"/>
 		</Unit>
+		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/paxos/paxos.c">
+			<Option target="kernel"/>
+		</Unit>
 		<Unit filename="/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/persistence_main.c">
 			<Option target="kernel"/>
 		</Unit>

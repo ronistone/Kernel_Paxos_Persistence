@@ -12,7 +12,7 @@ static void free_workers(workers_pool *pool);
 
 static void free_workers_threads(workers_pool *pool);
 
-static void free_pool(workers_pool *pool);
+void free_pool(workers_pool *pool);
 
 static int init_workers_threads(workers_pool *pool);
 
@@ -107,7 +107,7 @@ void free_workers_threads(workers_pool *pool) {
     if( pool -> workerThread != NULL ) {
         for ( i = 0; i < pool -> num_workers; i++ ) {
             if( pool -> workerThread[i] != NULL ) {
-                vfree(pool -> workerThread[i]);
+                kthread_stop(pool -> workerThread[i]);
             }
         }
         vfree(pool -> workerThread);

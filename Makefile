@@ -2,6 +2,7 @@ obj-m+= \
 	persistence.o
 
 persistence-y:= \
+    paxos/paxos.o \
     kpaxos/workers_pool.o \
 	kpaxos/write_persistence_device_operations.o \
 	kpaxos/read_persistence_device_operations.o \
