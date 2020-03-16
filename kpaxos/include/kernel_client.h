@@ -6,13 +6,12 @@
 #include <sys/time.h>
 #endif
 #define MSG_LEN 64
+#include "paxos_types.h"
 
-struct client_value {
-  int client_id;
-  struct timeval t;
-  size_t size;
-  char value[0];
-};
+typedef struct client_value {
+  int bufferId;
+  paxos_accepted* value;
+} client_value;
 
 struct user_msg {
   size_t size;

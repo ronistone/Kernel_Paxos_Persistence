@@ -18,6 +18,8 @@ buffer_to_paxos_accepted(char* buffer, paxos_accepted* out)
     memcpy(out->value.paxos_value_val,
            &buffer[sizeof(paxos_accepted)],
            out->value.paxos_value_len);
+  } else {
+    out -> value.paxos_value_val = NULL;
   }
 }
 
@@ -35,6 +37,23 @@ paxos_accepted_to_buffer(paxos_accepted* acc)
   return buffer;
 }
 
+char*
+client_value_to_buffer(client_value* client)
+{
+  size_t accepted_len = client -> value -> value.paxos_value_len + sizeof(paxos_accepted);
+  char* buffer = malloc(sizeof(client_value) + accepted_len);
+  if(buffer == NULL)
+    return NULL;
+  char* accepted = paxos_accepted_to_buffer(client -> value);
+  memcpy(buffer, &client -> bufferId, sizeof(int));
+  if(accepted != NULL) {
+    memcpy(&buffer[sizeof(int)], accepted, accepted_len);
+    free(accepted);
+  }
+
+
+  return buffer;
+}
 static int
 lmdb_compare_iid(const MDB_val* lhs, const MDB_val* rhs)
 {
@@ -98,7 +117,6 @@ lmdb_storage_init(struct lmdb_storage* s, char* db_env_path)
   }
 
   if ((result = mdb_env_open(env, db_env_path, 0, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) != 0) {
-    printf("%d\n", result);
     printf("Could not open lmdb environment at %s. %s\n", db_env_path, mdb_strerror(result));
     goto error;
   }
@@ -178,7 +196,6 @@ int
 lmdb_storage_tx_begin(struct lmdb_storage *s)
 {
   assert(s->txn == NULL);
-  printf("Aqui 2 %p \t %p\n", s->env, s->txn);
   return mdb_txn_begin(s->env, NULL, 0, &s->txn);
 }
 
@@ -206,7 +223,7 @@ lmdb_storage_put(struct lmdb_storage *s, paxos_accepted* acc)
 {
   int result;
   MDB_val key, data;
-  char* buffer = paxos_accepted_to_buffer(acc);
+  char* buffer = paxos_accepted_to_buffer(acc); //TODO think way to remove this conversion, because paxos_accepted come from kernel as buffer (char*). Maybe get the first sizeof(uint32_t) bytes
 
   key.mv_data = &acc->iid;
   key.mv_size = sizeof(iid_t);

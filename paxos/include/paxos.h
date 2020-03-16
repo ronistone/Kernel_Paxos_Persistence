@@ -97,6 +97,7 @@ extern "C"
   void         paxos_log_error(const char* format, ...);
   void         paxos_log_info(const char* format, ...);
   void         paxos_log_debug(const char* format, ...);
+  void         clearPaxosAccepted(paxos_accepted* accepted);
 
 /*
     MAX_N_OF_PROPOSERS should be removed.
@@ -106,6 +107,7 @@ extern "C"
     This number MUST be a power of 10.
 */
 #define MAX_N_OF_PROPOSERS 10
+#define MAX_PAXOS_VALUE_SIZE 200
 
 #ifdef __cplusplus
 }

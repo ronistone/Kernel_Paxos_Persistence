@@ -1,4 +1,4 @@
-#ifndef COMMON_PAX
+#ifndef COMMON_PAXfirst_buf
 #define COMMON_PAX
 
 //#include <linux/slab.h> //kmalloc

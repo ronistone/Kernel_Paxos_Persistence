@@ -5,6 +5,10 @@
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
+#
+
+VM_NAME = 'Kernel_Paxos_Persistence'
+
 Vagrant.configure(2) do |config|
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
@@ -45,13 +49,14 @@ Vagrant.configure(2) do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
+    vb.name = VM_NAME
+#     vb.memory = "2048"
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -59,8 +64,9 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
    config.vm.provision "shell", inline: <<-SHELL
-     sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+     sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
      sudo yum -y group install "Development Tools"
-     sudo yum -y install nano wget gcc bzip2 make kernel-devel kernel-headers dkms gflags-devel glog-devel lmdb-devel
+     sudo yum -y install nano wget gcc bzip2 make kernel-devel kernel-headers dkms gflags-devel glog-devel lmdb-devel lmdb tree
+     sudo sh -c 'mkdir /var/crash || echo -e "\n\nkernel.core_pattern = /var/crash/core.%t.%p\nkernel.panic=10\nkernel.unknown_nmi_panic=1" >> /etc/sysctl.conf '
    SHELL
 end

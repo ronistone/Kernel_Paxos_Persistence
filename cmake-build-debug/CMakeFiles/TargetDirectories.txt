@@ -1,0 +1,3 @@
+/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/kernel.dir
+/home/roni/Workspace/ufu/TCC/Kernel_Paxos_Persistence/cmake-build-debug/CMakeFiles/edit_cache.dir
