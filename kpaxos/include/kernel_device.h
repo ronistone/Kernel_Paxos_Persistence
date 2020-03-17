@@ -6,6 +6,8 @@
 #include <linux/poll.h>
 #include <linux/time.h>
 #include <linux/netdevice.h>
+#include "workers_pool.h"
+#include "paxos.h"
 
 #define BUFFER_SIZE 1000
 
@@ -14,16 +16,6 @@ typedef struct kernel_device_message {
   struct paxos_accepted* accepted;
 
 } kernel_device_message;
-
-typedef struct kernel_device_callback {
-
-  wait_queue_head_t response_wait;
-  struct paxos_accepted* response;
-  int buffer_id;
-  uint32_t is_done;
-  uint32_t iid;
-
-} kernel_device_callback;
 
 struct paxos_kernel_device {
     struct mutex char_mutex;
@@ -36,6 +28,7 @@ struct paxos_kernel_device {
     struct paxos_accepted** msg_buf;
     kernel_device_callback** callback_buf;
     atomic_t used_buf;
+    workers_pool *pool;
 
     struct file_operations fops;
 };
@@ -45,5 +38,6 @@ typedef struct paxos_kernel_device paxos_kernel_device;
 extern void         paxerr(char *err);
 extern int          kdevchar_init(int id, char* name, paxos_kernel_device* kernel_device);
 extern void         kdevchar_exit(paxos_kernel_device* kernel_device);
+extern void         persistence_device_destroy(paxos_kernel_device* kernel_device);
 
 #endif

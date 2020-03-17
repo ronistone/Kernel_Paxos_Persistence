@@ -51,6 +51,7 @@ static int __init paxos_persistence_init(void) {
 
 static void __exit paxos_persistence_exit(void) {
   kdevchar_exit(writeTestDevice);
+  persistence_device_destroy(writeTestDevice);
 
   kdevchar_exit(readTestDevice);
   persistence_device_destroy(readTestDevice);

@@ -12,7 +12,7 @@
 #include <pthread.h>
 #include <sys/stat.h>
 
-#include "paxos.h"
+//#include "paxos.h"
 #include "kernel_client.h"
 #include "lmdb_operations.h"
 
@@ -177,13 +177,18 @@ static void* generic_storage_thread(void* param) {
           message -> bufferId = bufferId;
           message -> value = accepted;
 
-          LOG(isRead, "Got this: bufferId[%d]: %d  --> %s   -> %p", bufferId, accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
+          if( isRead ){
+            LOG(isRead, "Got this: bufferId[%d]: %d", bufferId, accepted->iid);
+          } else {
+            LOG(isRead, "Got this: bufferId[%d]: %d  --> %s   -> %p", bufferId, accepted->iid, accepted->value.paxos_value_val, accepted->value.paxos_value_val);
+          }
           countMessages++;
           if(isRead){
             process_read_message(lmdbStorage, message, fd);
           } else {
             process_write_message(lmdbStorage, message);
           }
+          free(message -> value -> value.paxos_value_val);
           free(message);
         }
       } else {

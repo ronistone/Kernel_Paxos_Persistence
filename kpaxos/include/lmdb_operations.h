@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "paxos.h"
+//#include "paxos.h"
 #include "paxos_types.h"
 #include "kernel_client.h"
 
