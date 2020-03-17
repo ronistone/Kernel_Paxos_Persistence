@@ -159,3 +159,7 @@ void kdevchar_exit(paxos_kernel_device* kernel_device) {
   unregister_chrdev(kernel_device -> majorNumber, kernel_device -> de_name); // unregister the major number
   printk(KERN_INFO "Unloaded\n");
 }
+
+void persistence_device_destroy(paxos_kernel_device* kernel_device) {
+  free_pool(kernel_device -> pool);
+}

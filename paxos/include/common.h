@@ -15,6 +15,7 @@ typedef unsigned char uint8_t;
 typedef uint8_t eth_address;
 
 #define MSG_LEN 64
+#define MAX_PAXOS_VALUE_SIZE 200
 
 #define LOG_DEBUG(fmt, args...)                                                \
   printk(KERN_DEBUG "%s: " fmt "\n", MOD_NAME, ##args)

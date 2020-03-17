@@ -33,6 +33,7 @@
 #include "common.h"
 
 typedef unsigned char msgpack_packer;
+typedef uint32_t iid_t;
 
 struct paxos_value
 {

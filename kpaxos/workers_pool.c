@@ -137,3 +137,13 @@ void add_work(workers_pool* pool, persistence_work* work){
     }
 
 }
+
+persistence_work* createPersistenceWork(void* func_work) {
+  persistence_work *persistenceWork = vmalloc(sizeof(persistence_work));
+
+  if( persistenceWork != NULL ) {
+    init_kthread_work(&(persistenceWork->work), func_work);
+  }
+
+  return persistenceWork;
+}

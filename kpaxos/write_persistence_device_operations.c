@@ -33,14 +33,14 @@ ssize_t write_persistence_read(struct file *filep, char *buffer, size_t len,
     paxos_accepted* accepted = writePersistenceDevice.msg_buf[writePersistenceDevice.first_buf];
     llen = sizeof(paxos_accepted) + accepted->value.paxos_value_len;
     error_count_buffer_id = copy_to_user(buffer, &writePersistenceDevice.first_buf, sizeof(int));
-    error_count = copy_to_user(&buffer[sizeof(int)], (char *)(accepted), sizeof(paxos_accepted));
-    if(accepted->value.paxos_value_len > 0) {
-      error_count_value = copy_to_user(&buffer[sizeof(paxos_accepted)], (char *)(accepted->value.paxos_value_val),accepted -> value.paxos_value_len);
-    }
+    error_count = copy_to_user(&buffer[sizeof(int)], (char *)(accepted), sizeof(paxos_accepted) + accepted->value.paxos_value_len);
+
+//    printk("The message sended to buffer[%zu]: %s\n", accepted -> iid, &buffer[sizeof(int) + sizeof(paxos_accepted)]);
     atomic_dec(&(writePersistenceDevice.used_buf));
 
-    if (error_count != 0 || error_count_value != 0 || error_count_buffer_id != 0 ) {
-        paxerr("send fewer characters to the user");
+    if (error_count != 0 || error_count_buffer_id != 0 ) {
+        printk("send fewer characters to the user: error_count=%d, error_count_value=%d, error_count_buffer_id=%d\n",
+            error_count, error_count_value, error_count_buffer_id);
         return -1;
     } else {
       writePersistenceDevice.first_buf = (writePersistenceDevice.first_buf + 1) % BUFFER_SIZE;
@@ -74,37 +74,37 @@ int write_persistence_release(struct inode *inodep, struct file *filep) {
     return 0;
 }
 
-int write_persistence_add_message(const char* msg, size_t size, kernel_device_callback* callback) {
+kernel_device_callback* write_persistence_add_message(const char* msg, size_t size) {
   if (atomic_read(&(writePersistenceDevice.used_buf)) >= BUFFER_SIZE) {
     if (printk_ratelimit())
       printk(KERN_INFO "Read Persistence Buffer is full! Lost a value");
-    return -1;
+    return NULL;
   }
   atomic_inc(&(writePersistenceDevice.used_buf));
 
-  // BEGIN Save paxos accepted
-  memcpy(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf], msg, sizeof(paxos_accepted));
-
-  if(size > sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE){
+  if(size > sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE) {
     printk(KERN_ERR "Data will be truncated.");
     size = sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE;
-    writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf] -> value.paxos_value_len = MAX_PAXOS_VALUE_SIZE - sizeof(paxos_accepted);
   }
 
-  paxos_accepted* accepted = writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf];
-  if(accepted -> value.paxos_value_len > 0){
-    accepted -> value.paxos_value_val = vmalloc(accepted -> value.paxos_value_len);
-    memcpy(accepted -> value.paxos_value_val, &msg[sizeof(paxos_accepted)], accepted -> value.paxos_value_len);
-  }
+  // BEGIN Save paxos accepted
+  memset(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf], 0,
+      sizeof(paxos_accepted) + MAX_PAXOS_VALUE_SIZE);
+  memcpy(writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf], msg, size);
+
+//  printk("The message sended to buffer: %s\n", &msg[sizeof(paxos_accepted)]);
+
+  writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf] -> value.paxos_value_len = size - sizeof(paxos_accepted);
   // END Save paxos accepted
-  printk("paxos value %s\n", accepted -> value.paxos_value_val);
 
-  writePersistenceDevice.callback_buf[writePersistenceDevice.current_buf] = callback;
-
+  kernel_device_callback* callback = writePersistenceDevice.callback_buf[writePersistenceDevice.current_buf];
+  callback -> buffer_id = writePersistenceDevice.current_buf;
+  callback -> iid = writePersistenceDevice.msg_buf[writePersistenceDevice.current_buf] -> iid;
+  callback -> is_done = 0;
   writePersistenceDevice.current_buf = (writePersistenceDevice.current_buf + 1) % BUFFER_SIZE;
 
   wake_up_interruptible(&(writePersistenceDevice.access_wait));
-  return 0;
+  return callback;
 }
 
 

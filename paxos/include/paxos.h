@@ -37,6 +37,7 @@ extern "C"
 #include "paxos_types.h"
 #include <linux/kernel.h>
 #include <linux/types.h>
+#include <linux/wait.h>
 
   /* Paxos instance ids and ballots */
   typedef uint32_t iid_t;
@@ -82,7 +83,18 @@ extern "C"
     size_t lmdb_mapsize;
   };
 
-  extern struct paxos_config paxos_config;
+  typedef struct kernel_device_callback {
+
+    wait_queue_head_t response_wait;
+    struct paxos_accepted* response;
+    int buffer_id;
+    uint32_t is_done;
+    uint32_t iid;
+
+  } kernel_device_callback;
+
+
+extern struct paxos_config paxos_config;
 
   /* Core functions */
   int          paxos_quorum(int acceptors);
@@ -107,7 +119,6 @@ extern "C"
     This number MUST be a power of 10.
 */
 #define MAX_N_OF_PROPOSERS 10
-#define MAX_PAXOS_VALUE_SIZE 200
 
 #ifdef __cplusplus
 }

@@ -6,9 +6,9 @@
 #include "common.h"
 #include "write_test_device_operations.h"
 #include "write_persistence_device_operations.h"
-
+#include "workers_pool.h"
 static paxos_kernel_device writeTestDevice;
-
+static int N_THREADS = 10;
 
 int write_test_open(struct inode *inodep, struct file *filep) {
     LOG_DEBUG( "Mutex Address %p", &(writeTestDevice.char_mutex));
@@ -33,7 +33,25 @@ ssize_t write_test_write(struct file *filep, const char *buffer, size_t len,
     if (writeTestDevice.working == 0)
         return -1;
 
-    write_persistence_add_message(buffer, len, NULL);
+    kernel_device_callback* callback = write_persistence_add_message(buffer, len);
+    if (callback == NULL) {
+      if(printk_ratelimit())
+        printk("Buffer full!\n");
+      return len;
+    }
+
+    // TODO The write operation needs response?
+//    persistence_work *persistenceWork = createPersistenceWork(wait_response);
+//
+//    if(persistenceWork == NULL){
+//      printk("ERROR to create persistence work\n");
+//      return len;
+//    }
+//
+//    persistenceWork -> param = callback;
+//    persistenceWork -> iid = callback -> iid;
+//
+//    add_work(pool, persistenceWork);
 
     return len;
 }
@@ -65,6 +83,11 @@ paxos_kernel_device* createWriteTestDevice(void) {
     writeTestDevice.fops.write = write_test_write;
     writeTestDevice.fops.release = write_test_release;
     writeTestDevice.fops.poll = write_test_poll;
+
+    writeTestDevice.pool = create_pool(N_THREADS);
+    if( writeTestDevice.pool == NULL ) {
+      printk("WRITE_TEST Error: Thred Pool was not created\n");
+    }
 
     return &writeTestDevice;
 }

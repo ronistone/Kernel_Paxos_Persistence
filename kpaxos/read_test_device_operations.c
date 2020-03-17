@@ -12,11 +12,8 @@
 #include <linux/vmalloc.h>
 
 static paxos_kernel_device readTestDevice;
-static workers_pool *pool;
 static int messagesReceived = 0, messagesFound = 0;
 static int N_THREADS = 10;
-
-static persistence_work* createPersistenceWork();
 
 int read_test_open(struct inode *inodep, struct file *filep) {
     LOG_DEBUG("Mutex Address %p", &(readTestDevice.char_mutex));
@@ -81,7 +78,7 @@ ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
     return len;
   }
 
-  persistence_work *persistenceWork = createPersistenceWork();
+  persistence_work *persistenceWork = createPersistenceWork(wait_response);
 
   if(persistenceWork == NULL){
     printk("ERROR to create persistence work\n");
@@ -91,20 +88,10 @@ ssize_t read_test_write(struct file *filep, const char *buffer, size_t len,
   persistenceWork -> param = callback;
   persistenceWork -> iid = callback -> iid;
 
-  add_work(pool, persistenceWork);
+  add_work(readTestDevice.pool, persistenceWork);
   messagesReceived++;
 
   return len;
-}
-
-static persistence_work* createPersistenceWork() {
-    persistence_work *persistenceWork = vmalloc(sizeof(persistence_work));
-
-    if( persistenceWork != NULL ) {
-        init_kthread_work(&(persistenceWork->work), wait_response);
-    }
-
-    return persistenceWork;
 }
 
 unsigned int read_test_poll(struct file *file, poll_table *wait) {
@@ -139,14 +126,11 @@ paxos_kernel_device *createReadTestDevice(void) {
     readTestDevice.fops.release = read_test_release;
     readTestDevice.fops.poll = read_test_poll;
 
-    pool = create_pool(N_THREADS);
-    if (pool == NULL) {
-        printk("ERROR: Thread Pool was not created\n");
+    readTestDevice.pool = create_pool(N_THREADS);
+    if (readTestDevice.pool == NULL) {
+        printk("READ_TEST ERROR: Thread Pool was not created\n");
     }
 
     return &readTestDevice;
 }
 
-void persistence_device_destroy(paxos_kernel_device* kernel_device) {
-    free_pool(pool);
-}

@@ -22,6 +22,7 @@ static char receive[BUFFER_LENGTH];
 struct timeval tv;
 int readMessages = 1000000;
 int writeMessages = 100000;
+int totalMessages = 100;
 
 static char*
 paxos_accepted_to_buffer(paxos_accepted* acc)
@@ -29,7 +30,6 @@ paxos_accepted_to_buffer(paxos_accepted* acc)
     size_t len = acc->value.paxos_value_len;
     char* buffer = malloc(sizeof(paxos_accepted) + len);
     if (buffer == NULL) {
-        printf("FUDEU!");
       return NULL;
     }
     memcpy(buffer, acc, sizeof(paxos_accepted));
@@ -51,7 +51,7 @@ static void calculateThroughput(){
   us += (now.tv_usec - tv.tv_usec);
   fflush(stdout);
   fprintf(stderr, "\n\n%.2lf msgs sent and received per second\n",
-          ((float)readMessages * 1000000 / us));
+          ((float)totalMessages * 1000000 / us));
 }
 
 void* readProcess(){
@@ -63,9 +63,10 @@ void* readProcess(){
         return NULL;
     }
 
+    sleep(5);
     unsigned int i;
     gettimeofday(&tv, NULL);
-    for(i=1;i < readMessages;i++) {
+    for(i=1;i < totalMessages;i++) {
         paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
         memset(accepted, 0, sizeof(paxos_accepted));
         accepted->iid = i;
@@ -103,7 +104,8 @@ void* writeProcess() {
   }
 
   int i;
-  for(i=0;i<writeMessages;i++) {
+  gettimeofday(&tv, NULL);
+  for(i=0;i<totalMessages;i++) {
     paxos_accepted *accepted = malloc(sizeof(paxos_accepted));
     accepted->iid = i;
     accepted->value.paxos_value_len = MSG_LEN;
@@ -111,8 +113,8 @@ void* writeProcess() {
     strcpy(accepted->value.paxos_value_val, CLIENT_MSG);
     stringToSend = paxos_accepted_to_buffer(accepted);
 
-    printf("Writing message to the device bytes=[%zu].\n",
-        sizeof(paxos_accepted)
+    printf("Writing message to the device bytes=[%zu]: iid=%zu, value=%s.\n",
+        sizeof(paxos_accepted), accepted -> iid, accepted->value.paxos_value_val
         );
 
     ret = write(readDevice,
@@ -120,15 +122,18 @@ void* writeProcess() {
         sizeof(paxos_accepted) + accepted->value.paxos_value_len
         );
 
+    free(accepted -> value.paxos_value_val);
     free(accepted);
     free(stringToSend);
     if (ret < 0) {
       perror("Failed to write message the char device");
-      close(fd);
+      close(readDevice);
       return NULL;
     }
 //    sleep(1);
   }
+  close(readDevice);
+  calculateThroughput();
 
 }
 

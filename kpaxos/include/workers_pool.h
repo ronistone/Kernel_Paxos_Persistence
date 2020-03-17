@@ -7,7 +7,8 @@
 
 #include <linux/kthread.h>
 #include <linux/vmalloc.h>
-#include "kernel_device.h"
+//#include "kernel_device.h"
+#include "paxos.h"
 
 typedef struct workers_pool {
 
@@ -28,4 +29,5 @@ typedef struct persistence_work {
 extern workers_pool* create_pool(int num_workers);
 extern void add_work(workers_pool* pool, persistence_work* work);
 extern void free_pool(workers_pool *pool);
+extern persistence_work* createPersistenceWork(void* func_work);
 #endif //KERNEL_PAXOS_PERSISTENCE_WORKERS_POOL_H
